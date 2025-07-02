@@ -19,3 +19,7 @@ archive: clean
 	cd .. && \
 	  tar czf ~/work/archive/util-src-$$RELEASE.tar.gz \
 	  --exclude=\.git util/
+
+install: all
+	cp -rf src/include/util /usr/local/include
+	cp -rf src/lib/libutil.a /usr/local/lib
