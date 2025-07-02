@@ -86,4 +86,16 @@ int vec_find_at
 void vec_reduce
   (vec_t* vec, unsigned size);
 
+void vec_hex_decode
+  (vec_t* vec);
+
+void vec_hex_encode
+  (vec_t* vec);
+
+int vec_base64_decode
+  (vec_t* vec);
+
+void vec_base64_encode
+  (vec_t* vec);
+
 #endif
