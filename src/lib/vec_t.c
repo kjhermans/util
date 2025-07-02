@@ -189,7 +189,7 @@ void vec_shift
     out->data = realloc(out->data, out->size + diff + 1);
     memmove(out->data + whereto, out->data + offset, size + 1);
     memset(out->data + offset, 0, diff);
-    out->size += (offset - whereto);
+    out->size += diff;
   } else if (offset > whereto) {
     memmove(out->data + whereto, out->data + offset, size + 1);
     out->size -= (offset - whereto);
