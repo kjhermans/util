@@ -86,6 +86,9 @@ int vec_find_at
 void vec_reduce
   (vec_t* vec, unsigned size);
 
+int vec_compare
+  (vec_t* v1, vec_t* v2);
+
 void vec_hex_decode
   (vec_t* vec);
 

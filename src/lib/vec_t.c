@@ -259,6 +259,20 @@ void vec_reduce
   vec->data[ vec->size ] = 0;
 }
 
+int vec_compare
+  (vec_t* v1, vec_t* v2)
+{
+  if (v1->size != v2->size) {
+    return (v2->size - v1->size);
+  }
+  for (unsigned i=0; i < v1->size; i++) {
+    if (v1->data[ i ] != v2->data[ i ]) {
+      return (v2->data[ i ] - v1->data[ i ]);
+    }
+  }
+  return 0;
+}
+
 static
 unsigned hexdecode
   (char c)

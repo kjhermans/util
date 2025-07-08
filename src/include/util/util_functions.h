@@ -209,6 +209,10 @@ void vec_reduce
 
 /* declared in ./vec_t.c */
 extern
+int vec_compare
+  (vec_t* v1, vec_t* v2)
+  __attribute__ ((warn_unused_result));
+
 void vec_hex_decode
   (vec_t* vec);
 
