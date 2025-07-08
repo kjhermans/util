@@ -89,7 +89,9 @@ void vec_reduce
 int vec_compare
   (vec_t* v1, vec_t* v2);
 
-void vec_hex_decode
+/** Relatively standard encoders / decoders, in place **/
+
+int vec_hex_decode
   (vec_t* vec);
 
 void vec_hex_encode

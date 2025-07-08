@@ -283,7 +283,7 @@ unsigned hexdecode
   return 0;
 }
 
-void vec_hex_decode
+int vec_hex_decode
   (vec_t* vec)
 {
   unsigned l = 0, c = 0;
@@ -291,6 +291,13 @@ void vec_hex_decode
   char* hexchars = "0123456789abcdefABCDEF";
 
   for (unsigned i=0; i < vec->size; i++) {
+    if (vec->data[ i ] == ' '
+        || vec->data[ i ] == '\r'
+        || vec->data[ i ] == '\n'
+        || vec->data[ i ] == '\t')
+    {
+      continue;
+    }
     if (strchr(hexchars, vec->data[ i ])) {
       codon[ c ] = vec->data[ i ];
       ++c;
@@ -299,10 +306,13 @@ void vec_hex_decode
                            | hexdecode(codon[ 1 ]));
         c = 0;
       }
+    } else {
+      return ~0;
     }
   }
   vec->size = l;
   if (vec->data) { vec->data[ vec->size ] = 0; }
+  return 0;
 }
 
 void vec_hex_encode
