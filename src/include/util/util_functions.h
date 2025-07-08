@@ -235,6 +235,17 @@ extern
 void vec_base64_encode
   (vec_t* vec);
 
+/* declared in ./vec_t.c */
+extern
+void vec_ca_encode
+  (vec_t* vec);
+
+/* declared in ./vec_t.c */
+extern
+int vec_ca_decode
+  (vec_t* vec)
+  __attribute__ ((warn_unused_result));
+
 /* declared in ./write_insistent.c */
 extern
 int write_insistent

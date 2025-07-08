@@ -443,3 +443,97 @@ void vec_base64_encode
     vec_delete(vec, 0, d);
   }
 }
+
+// Single-byte error correction for messages <255 bytes long
+//  using two check bytes. Based on "CA-based byte error-correcting code"
+//  by Chowdhury et al.
+//
+// rmmh 2013
+
+static
+uint8_t lfsr(uint8_t x) {
+  return (x >> 1) ^ (-(x&1) & 0x8E);
+}
+
+static
+void eccComputeChecks
+  (uint8_t *data, int data_len, uint8_t *out_c0, uint8_t *out_c1)
+{
+  uint8_t c0 = 0; // parity: m_0 ^ m_1 ^ ... ^ m_n-1
+  uint8_t c1 = 0; // lfsr: f^n-1(m_0) ^ f^n(m_1) ^ ... ^ f^0(m_n-1)
+  for (int i = 0; i < data_len; ++i) {
+    c0 ^= data[i];
+    c1 = lfsr(c1 ^ data[i]);
+  }
+  *out_c0 = c0;
+  *out_c1 = c1;
+}
+
+static
+void eccEncode
+  (uint8_t *data, int data_len, uint8_t check[2])
+{
+  eccComputeChecks(data, data_len, &check[0], &check[1]);
+}
+
+static
+int eccDecode
+  (uint8_t *data, int data_len, uint8_t check[2])
+{
+  uint8_t s0, s1;
+  eccComputeChecks(data, data_len, &s0, &s1);
+  s0 ^= check[0];
+  s1 ^= check[1];
+  if (s0 && s1) {
+    int error_index = data_len - 255;
+    while (s1 != s0) {  // find i st s1 = lfsr^i(s0) 
+      s1 = lfsr(s1);
+      error_index++;
+    }
+    if (error_index < 0 || error_index >= data_len) {
+      // multi-byte error?
+      return 1;
+    }
+    data[error_index] ^= s0;
+  } else if (s0 || s1) {
+    // parity error
+  }
+  return 0;
+}
+
+void vec_ca_encode
+  (vec_t* vec)
+{
+  unsigned l;
+  uint8_t check[ 2 ];
+
+  for (unsigned i=0; i < vec->size; i += 254) {
+    if ((l = vec->size - i) > 254) {
+      l = 254;
+    }
+    eccEncode(vec->data + i, l, check);
+    vec_insert(vec, i, check, 2);
+    i += 2;
+  }
+}
+
+int vec_ca_decode
+  (vec_t* vec)
+{
+  unsigned l;
+
+  for (unsigned i=0; i < vec->size; i += 256) {
+    if ((l = vec->size - i) > 256) {
+      l = 256;
+    }
+    if (l < 2) {
+      return ~0;
+    }
+    if (eccDecode(vec->data + i + 2, l - 2, vec->data + i)) {
+      return ~0;
+    }
+    vec_delete(vec, i, 2);
+    i -= 2;
+  }
+  return 0;
+}

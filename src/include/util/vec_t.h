@@ -103,4 +103,12 @@ int vec_base64_decode
 void vec_base64_encode
   (vec_t* vec);
 
+/** Error correction codes **/
+
+void vec_ca_encode
+  (vec_t* vec);
+
+int vec_ca_decode
+  (vec_t* vec);
+
 #endif
