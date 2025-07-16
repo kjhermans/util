@@ -144,6 +144,18 @@ int strxypos
   (char* string, unsigned pos, unsigned vector[ 2 ])
   __attribute__ ((warn_unused_result));
 
+/* declared in ./table_t.c */
+extern
+int table_insert_row
+  (td_t* db, const char* table, unsigned nfields, ...)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./table_t.c */
+extern
+int table_get_id
+  (td_t* db, const char* table, uint64_t* id)
+  __attribute__ ((warn_unused_result));
+
 /* declared in ./vec_t.c */
 extern
 void vec_printf
