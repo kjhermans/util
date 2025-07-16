@@ -8,6 +8,7 @@
 #ifndef _UTIL_FUNCTIONS_H_
 #define _UTIL_FUNCTIONS_H_
 
+#include <btree/td.h>
 /* declared in ./absorb_file.c */
 extern
 int absorb_file

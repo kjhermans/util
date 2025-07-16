@@ -13,7 +13,7 @@ preproc: fnchdr
 fnchdr: ../include/util/util_functions.h
 
 ../include/util/util_functions.h: $(CFILES)
-	../../bin/genfnchdr -i UTIL \
+	../../bin/genfnchdr -i UTIL -A '#include <btree/td.h>' \
 	  > ../include/util/util_functions.h
 
 $(TARGET): $(OBJECTS)
