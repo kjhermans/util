@@ -13,7 +13,7 @@ MAKE_ARRAY_CODE(row_t, table_)
 table_insert_row(
   &db, "Users", 3,
   "Firstname", DB_TYPE_STRING, "Katherine",
-  "Emailaddress", DB_TYPE_NULL,                /* Note the lack of 3rd param */
+  "Emailaddress", DB_TYPE_NULL,                // Note the lack of 3rd param
   "Age", DB_TYPE_INTEGER, 32
 );
 
@@ -51,7 +51,7 @@ int table_insert_row
         snprintf(valuebuffer, sizeof(valuebuffer), "false");
       }
       break;
-    case DB_FIELDTYPE_INT:
+    case DB_FIELDTYPE_INTEGER:
       fieldvalue_int = va_arg(ap, int64_t);
       snprintf(valuebuffer, sizeof(valuebuffer), "%"PRId64, fieldvalue_int);
       break;
