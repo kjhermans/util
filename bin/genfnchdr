@@ -13,6 +13,7 @@
 ## -i <ident>    Use ident as identifier for exclusion define in the header.
 ## -t <type>     Add function return type to recognize.
 ## -a <file>     Add contents of file to header (eg to include a type).
+## -A <string>   Add string to header (eg a #include).
 ##
 
 my @types = (
@@ -25,6 +26,7 @@ my @types = (
 my $pattern;
 my $hdef;
 my @prefix;
+my @strings;
 
 for (my $i=0; $i < scalar(@ARGV); $i++) {
   if ($ARGV[ $i ] eq '-p') {
@@ -49,6 +51,12 @@ for (my $i=0; $i < scalar(@ARGV); $i++) {
     my $prefix = splice(@ARGV, $i, 1);
     push @prefix, $prefix;
     print STDERR "Adding file $prefix\n";
+    --$i;
+  }
+  if ($ARGV[ $i ] eq '-A') {
+    splice(@ARGV, $i, 1);
+    my $string = splice(@ARGV, $i, 1);
+    push @strings, $string;
     --$i;
   }
 }
@@ -79,6 +87,7 @@ print "/**
 while (scalar(@ARGV)) {
   my $dir = shift @ARGV;
   foreach my $prefix (@prefix) { system("cat $dir/$prefix"); }
+  foreach my $string (@strings) { print "$string\n"; }
   find($dir, 'enter_code', 1, $pattern);
 }
 
