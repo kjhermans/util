@@ -53,6 +53,20 @@ chibihash64
 
 /* declared in ./chibihash64.c */
 extern
+uint32_t
+chibihash32
+  (const void *keyIn, long len)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./chibihash64.c */
+extern
+uint16_t
+chibihash16
+  (const void *keyIn, long len)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./chibihash64.c */
+extern
 int main
   (int argc, char* argv[])
   __attribute__ ((warn_unused_result));

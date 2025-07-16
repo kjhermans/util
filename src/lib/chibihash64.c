@@ -69,6 +69,26 @@ chibihash64(const void *keyIn, long len, uint64_t seed)
 	return x;
 }
 
+uint32_t
+chibihash32(const void *keyIn, long len)
+{
+  uint64_t hash = chibihash64(keyIn, len, 0);
+  uint32_t hi = (hash >> 32);
+  uint32_t lo = hash;
+  return hi ^ lo;
+}
+
+uint16_t
+chibihash16(const void *keyIn, long len)
+{
+  uint64_t hash = chibihash64(keyIn, len, 0);
+  uint16_t n0 = hash;
+  uint16_t n1 = hash >> 16;
+  uint16_t n2 = hash >> 32;
+  uint16_t n3 = hash >> 48;
+  return n0 ^ n1 ^ n2 ^ n3;
+}
+
 /*
 #include <stdlib.h>
 #include <time.h>
