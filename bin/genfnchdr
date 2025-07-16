@@ -14,6 +14,7 @@
 ## -t <type>     Add function return type to recognize.
 ## -a <file>     Add contents of file to header (eg to include a type).
 ## -A <string>   Add string to header (eg a #include).
+## -r            Don't add warn_no_result pragmas.
 ##
 
 my @types = (
@@ -27,6 +28,7 @@ my $pattern;
 my $hdef;
 my @prefix;
 my @strings;
+my $dontwarnnoresult = 0;
 
 for (my $i=0; $i < scalar(@ARGV); $i++) {
   if ($ARGV[ $i ] eq '-p') {
@@ -58,6 +60,9 @@ for (my $i=0; $i < scalar(@ARGV); $i++) {
     my $string = splice(@ARGV, $i, 1);
     push @strings, $string;
     --$i;
+  }
+  if ($ARGV[ $i ] eq '-r') {
+    $dontwarnnoresult = 1;
   }
 }
 
@@ -113,7 +118,7 @@ sub enter_code {
       if ($static !~ /^static/) {
         print "/* declared in $path */\n";
         print "extern\n$inline$decl\n  $params";
-        if ($decl =~ /^void/) {
+        if ($decl =~ /^void/ || $dontwarnnoresult) {
           print ";\n\n";
         } else {
           print "\n  __attribute__ ((warn_unused_result));\n\n";
