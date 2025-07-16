@@ -12,11 +12,20 @@
 MAKE_ARRAY_HEADER(vec_t, row_)
 MAKE_ARRAY_HEADER(row_t, table_)
 
-#define DB_KEY_SIZE             128
+#define DB_KEY_SIZE             256
+
+typedef struct
+{
+  table_t       table;
+  unsigned char token[ DB_KEY_SIZE ];
+  unsigned      offset;
+  unsigned      length;
+}
+cache_t;
 
 #define DB_FIELDTYPE_NULL       0
 #define DB_FIELDTYPE_BOOLEAN    1
-#define DB_FIELDTYPE_INT        2
+#define DB_FIELDTYPE_INTEGER    2
 #define DB_FIELDTYPE_FLOAT      3
 #define DB_FIELDTYPE_STRING     4
 

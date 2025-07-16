@@ -7,6 +7,17 @@
 MAKE_ARRAY_CODE(vec_t, row_)
 MAKE_ARRAY_CODE(row_t, table_)
 
+/**
+ * Example:
+
+table_insert_row(
+  &db, "Users", 3,
+  "Firstname", DB_TYPE_STRING, "Katherine",
+  "Emailaddress", DB_TYPE_NULL,                /* Note the lack of 3rd param */
+  "Age", DB_TYPE_INTEGER, 32
+);
+
+ */
 int table_insert_row
   (td_t* db, const char* table, unsigned nfields, ...)
 {
@@ -30,6 +41,7 @@ int table_insert_row
 
     switch (fieldtype) {
     case DB_FIELDTYPE_NULL:
+      snprintf(valuebuffer, sizeof(valuebuffer), "null");
       break;
     case DB_FIELDTYPE_BOOLEAN:
       fieldvalue_int = va_arg(ap, int64_t);
@@ -61,6 +73,11 @@ int table_insert_row
   va_end(ap);
 
   return 0;
+}
+
+int table_get_num_rows
+  (td_t* db, const char* table, unsigned* nrows)
+{
 }
 
 int table_get_id
