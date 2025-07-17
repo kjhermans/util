@@ -163,6 +163,18 @@ int table_insert_row
 
 /* declared in ./table_t.c */
 extern
+int table_delete_row
+  (td_t* db, const char* table, uint64_t rowid)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./table_t.c */
+extern
+int table_iterate_rows
+  (td_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./table_t.c */
+extern
 int table_get_size
   (td_t* db, const char* table, unsigned* nrows)
   __attribute__ ((warn_unused_result));

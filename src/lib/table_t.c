@@ -134,6 +134,77 @@ int table_insert_row
   return 0;
 }
 
+int table_delete_row
+  (td_t* db, const char* table, uint64_t rowid)
+{
+  char searchkeystr[ DB_KEY_SIZE ];
+  tdt_t search = { searchkeystr, 0 };
+
+  snprintf(searchkeystr, sizeof(searchkeystr), "TUP_%s_%"PRIu64, table, rowid);
+  search.size = strlen(searchkeystr);
+
+  if (td_del(db, &search, 0, TDFLG_DELETEALL) == 0) {
+    unsigned nrows = 0;
+    if (__table_get_size(db, table, &nrows) == 0) {
+      if (nrows == 0) {
+        return ~0;
+      }
+      --nrows; 
+      return __table_set_size(db, table, nrows);
+    } else {
+      return __table_set_size(db, table, (unsigned)1);
+    }
+  }
+  return ~0;
+}
+
+int table_iterate_rows
+  (td_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg)
+{
+  tdc_t cursor;
+  char searchkeystr[ DB_KEY_SIZE ];
+  tdt_t search = { searchkeystr, 0 };
+  uint64_t id = 0;
+  row_t row = { 0 };
+
+  snprintf(searchkeystr, sizeof(searchkeystr), "TUP_%s_", table);
+  search.size = strlen(searchkeystr);
+  tdc_init(db, &cursor);
+  if (tdc_mov(&cursor, &search, TDFLG_PARTIAL|TDFLG_EXACT)) {
+    return ~0;
+  }
+  while (1) {
+    char keystr[ DB_KEY_SIZE ];
+    tdt_t key = { keystr, sizeof(keystr) };
+    tdt_t val = { 0 };
+    if (tdc_get(&cursor, &key, &val, TDFLG_ALLOCTDT) == 0) {
+      char* numstr = key.data + search.size;
+      uint64_t foundid;
+      numstr[ 20 ] = 0;
+      foundid = strtoull(numstr, 0, 10);
+      if (foundid != id) {
+        id = foundid;
+        int r = fnc(id, &row, arg);
+        row_deep_free(&row);
+        if (r) {
+          return r;
+        }
+      }
+      vec_t tuple = { .data = val.data, .size = val.size };
+      row_push(&row, tuple);
+    }
+    if (tdc_nxt(&cursor, 0, 0, 0)) {
+      break;
+    }
+  }
+  if (row.count) {
+    int r = fnc(id, &row, arg);
+    row_deep_free(&row);
+    return r;
+  }
+  return 0;
+}
+
 int table_get_size
   (td_t* db, const char* table, unsigned* nrows)
 {
@@ -156,7 +227,7 @@ int table_get_size
   while (1) {
     char keystr[ DB_KEY_SIZE ];
     tdt_t key = { keystr, sizeof(keystr) };
-    if (tdc_get(&cursor, &key, 0, TDFLG_ALLOCTDT) == 0) {
+    if (tdc_get(&cursor, &key, 0, 0) == 0) {
       char* numstr = key.data + search.size;
       uint64_t foundid;
       numstr[ 20 ] = 0;
