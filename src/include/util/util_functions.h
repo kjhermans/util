@@ -157,6 +157,12 @@ void table_deep_free
 
 /* declared in ./table_t.c */
 extern
+int table_update_row
+  (td_t* db, const char* table, uint64_t rowid, unsigned nfields, ...)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./table_t.c */
+extern
 int table_insert_row
   (td_t* db, const char* table, unsigned nfields, ...)
   __attribute__ ((warn_unused_result));

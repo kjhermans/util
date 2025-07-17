@@ -76,26 +76,20 @@ int __table_set_size
 /**
  * Example:
 
-table_insert_row(
-  &db, "Users", 3,
+__table_update_row(
+  &db, "Users", 13204,
+  3,
   "Firstname", DB_TYPE_STRING, "Katherine",
   "Emailaddress", DB_TYPE_NULL,                // Note the lack of 3rd param
   "Age", DB_TYPE_INTEGER, 32
 );
 
  */
-int table_insert_row
-  (td_t* db, const char* table, unsigned nfields, ...)
+static
+int __table_update_row
+  (td_t* db, const char* table, uint64_t id, unsigned nfields, va_list ap)
 {
-  uint64_t id = 0;
-  unsigned i = 0;
-  va_list ap = { 0 };
-
-  if (__table_get_id(db, table, &id)) {
-    return ~0;
-  }
-  va_start(ap, nfields);
-  for (i=0; i < nfields; i++) {
+  for (unsigned i=0; i < nfields; i++) {
     const char* fieldname = va_arg(ap, const char*);
     unsigned fieldtype = va_arg(ap, unsigned);
     char valuebuffer[ 64 ];
@@ -136,6 +130,38 @@ int table_insert_row
     if (td_put(db, &key, &val, 0)) {
       return ~0;
     }
+  }
+  return 0;
+}
+
+int table_update_row
+  (td_t* db, const char* table, uint64_t rowid, unsigned nfields, ...)
+{
+  va_list ap = { 0 };
+  int r;
+
+  va_start(ap, nfields);
+  if ((r = __table_update_row(db, table, rowid, nfields, ap)) != 0) {
+    return ~0;
+  }
+  va_end(ap);
+
+  return 0;
+}
+
+int table_insert_row
+  (td_t* db, const char* table, unsigned nfields, ...)
+{
+  uint64_t id = 0;
+  va_list ap = { 0 };
+  int r;
+
+  if (__table_get_id(db, table, &id)) {
+    return ~0;
+  }
+  va_start(ap, nfields);
+  if ((r = __table_update_row(db, table, id, nfields, ap)) != 0) {
+    return ~0;
   }
   va_end(ap);
 
