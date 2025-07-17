@@ -9,10 +9,17 @@
 #include <util/array.h>
 #include <btree/td.h>
 
-MAKE_ARRAY_HEADER(vec_t, row_)
-MAKE_ARRAY_HEADER(row_t, table_)
-
 #define DB_KEY_SIZE             256
+
+typedef struct
+{
+  char          name[ DB_KEY_SIZE ];
+  vec_t         value;
+}
+tuple_t;
+
+MAKE_ARRAY_HEADER(tuple_t, row_)
+MAKE_ARRAY_HEADER(row_t, table_)
 
 typedef struct
 {

@@ -4,16 +4,16 @@
 
 #undef ARRAY_EQUALS
 #define ARRAY_EQUALS(a,b) (&a == &b)
-MAKE_ARRAY_CODE(vec_t, row_)
+MAKE_ARRAY_CODE(tuple_t, row_)
 MAKE_ARRAY_CODE(row_t, table_)
 
 void row_deep_free
   (row_t* row)
 {
   for (unsigned i=0; i < row->count; i++) {
-    free(row->list[ i ].data);
-    row->list[ i ].data = 0;
-    row->list[ i ].size = 0;
+    free(row->list[ i ].value.data);
+    row->list[ i ].value.data = 0;
+    row->list[ i ].value.size = 0;
   }
   free(row->list);
   memset(row, 0, sizeof(*row));
@@ -234,7 +234,8 @@ int table_iterate_rows
           return r;
         }
       }
-      vec_t tuple = { .data = val.data, .size = val.size };
+      tuple_t tuple = { .value.data = val.data, .value.size = val.size };
+      snprintf(tuple.name, sizeof(tuple.name), "%s", &(numstr[ 21 ]));
       row_push(&row, tuple);
     }
     if (tdc_nxt(&cursor, 0, 0, 0)) {
