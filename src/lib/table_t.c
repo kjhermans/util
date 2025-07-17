@@ -7,6 +7,28 @@
 MAKE_ARRAY_CODE(vec_t, row_)
 MAKE_ARRAY_CODE(row_t, table_)
 
+void row_deep_free
+  (row_t* row)
+{
+  for (unsigned i=0; i < row->count; i++) {
+    free(row->list[ i ].data);
+    row->list[ i ].data = 0;
+    row->list[ i ].size = 0;
+  }
+  free(row->list);
+  memset(row, 0, sizeof(*row));
+}
+
+void table_deep_free
+  (table_t* table)
+{
+  for (unsigned i=0; i < table->count; i++) {
+    row_deep_free(&(table->list[ i ]));
+  }
+  free(table->list);
+  memset(table, 0, sizeof(*table));
+}
+
 static
 int __table_get_size
   (td_t* db, const char* table, unsigned* nrows)

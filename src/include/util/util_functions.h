@@ -147,6 +147,16 @@ int strxypos
 
 /* declared in ./table_t.c */
 extern
+void row_deep_free
+  (row_t* row);
+
+/* declared in ./table_t.c */
+extern
+void table_deep_free
+  (table_t* table);
+
+/* declared in ./table_t.c */
+extern
 int table_insert_row
   (td_t* db, const char* table, unsigned nfields, ...)
   __attribute__ ((warn_unused_result));
