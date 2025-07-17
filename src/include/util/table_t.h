@@ -17,7 +17,7 @@ MAKE_ARRAY_HEADER(row_t, table_)
 typedef struct
 {
   table_t       table;
-  unsigned char token[ DB_KEY_SIZE ];
+  uint64_t      rowid;
   unsigned      offset;
   unsigned      length;
 }
@@ -30,11 +30,27 @@ cache_t;
 #define DB_FIELDTYPE_STRING     4
 
 extern
+void row_deep_free
+  (row_t* row);
+
+extern
+void table_deep_free
+  (table_t* table);
+
+extern
 int table_insert_row
   (td_t* db, const char* table, unsigned nfields, ...);
 
 extern
-int table_get_id
-  (td_t* db, const char* table, uint64_t* id);
+int table_update_row
+  (td_t* db, const char* table, uint64_t rowid, unsigned nfields, ...);
+
+extern
+int table_delete_row
+  (td_t* db, const char* table, uint64_t rowid);
+
+extern
+int table_iterate_rows
+  (td_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg);
 
 #endif
