@@ -153,6 +153,12 @@ int table_insert_row
 
 /* declared in ./table_t.c */
 extern
+int table_get_size
+  (td_t* db, const char* table, unsigned* nrows)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./table_t.c */
+extern
 int table_get_id
   (td_t* db, const char* table, uint64_t* id)
   __attribute__ ((warn_unused_result));

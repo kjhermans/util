@@ -7,6 +7,32 @@
 MAKE_ARRAY_CODE(vec_t, row_)
 MAKE_ARRAY_CODE(row_t, table_)
 
+static
+int __table_get_size
+  (td_t* db, const char* table, unsigned* nrows)
+{
+  char keystr[ DB_KEY_SIZE ];
+  tdt_t cache = { keystr, 0 };
+  tdt_t value = { nrows, sizeof(unsigned) };
+
+  snprintf(keystr, sizeof(keystr), "SIZ_%s", table);
+  cache.size = strlen(keystr);
+  return td_get(db, &cache, &value, TDFLG_EXACT);
+}
+
+static
+int __table_set_size
+  (td_t* db, const char* table, unsigned nrows)
+{
+  char keystr[ DB_KEY_SIZE ];
+  tdt_t cache = { keystr, 0 };
+  tdt_t value = { &nrows, sizeof(unsigned) };
+
+  snprintf(keystr, sizeof(keystr), "SIZ_%s", table);
+  cache.size = strlen(keystr);
+  return td_put(db, &cache, &value, 0);
+}
+
 /**
  * Example:
 
@@ -63,7 +89,8 @@ int table_insert_row
       fieldvalue_str = va_arg(ap, char*);
       break;
     }
-    snprintf(keystr, sizeof(keystr), "%s_%.20"PRIu64"_%s", table, id, fieldname);
+    snprintf(keystr, sizeof(keystr),
+             "TUP_%s_%.20"PRIu64"_%s", table, id, fieldname);
     key.size = strlen(keystr);
     val.size = strlen(fieldvalue_str);
     if (td_put(db, &key, &val, 0)) {
@@ -72,12 +99,56 @@ int table_insert_row
   }
   va_end(ap);
 
+  {
+    unsigned nrows = 0;
+    if (__table_get_size(db, table, &nrows) == 0) {
+      ++nrows;
+      return __table_set_size(db, table, nrows);
+    } else {
+      return __table_set_size(db, table, (unsigned)1);
+    }
+  }
+
   return 0;
 }
 
-int table_get_num_rows
+int table_get_size
   (td_t* db, const char* table, unsigned* nrows)
 {
+  tdc_t cursor;
+  char searchkeystr[ DB_KEY_SIZE ];
+  tdt_t search = { searchkeystr, 0 };
+  uint64_t id = 0;
+
+  if (__table_get_size(db, table, nrows) == 0) {
+    return 0;
+  }
+
+  snprintf(searchkeystr, sizeof(searchkeystr), "TUP_%s_", table);
+  search.size = strlen(searchkeystr);
+  tdc_init(db, &cursor);
+  if (tdc_mov(&cursor, &search, TDFLG_PARTIAL|TDFLG_EXACT)) {
+    return ~0;
+  }
+  *nrows = 0;
+  while (1) {
+    char keystr[ DB_KEY_SIZE ];
+    tdt_t key = { keystr, sizeof(keystr) };
+    if (tdc_get(&cursor, &key, 0, TDFLG_ALLOCTDT) == 0) {
+      char* numstr = key.data + search.size;
+      uint64_t foundid;
+      numstr[ 20 ] = 0;
+      foundid = strtoull(numstr, 0, 10);
+      if (foundid != id) {
+        id = foundid;
+        ++(*nrows);
+      }
+    }
+    if (tdc_nxt(&cursor, 0, 0, 0)) {
+      break;
+    }
+  }
+  return __table_set_size(db, table, *nrows);
 }
 
 int table_get_id
