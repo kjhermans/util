@@ -30,6 +30,24 @@ void table_deep_free
 }
 
 static
+int __table_get_id
+  (td_t* db, const char* table, uint64_t* id)
+{
+  char keystr[ DB_KEY_SIZE ] = { 0 };
+  tdt_t key = { keystr, 0 }, val = { id, sizeof(*id) };
+
+  snprintf(keystr, sizeof(keystr), "SEQ_%s", table);
+  key.size = strlen(keystr);
+  if (td_get(db, &key, &val, TDFLG_EXACT)) {
+    *id = 1;
+    return td_put(db, &key, &val, 0);
+  } else {
+    ++(*id);
+    return td_put(db, &key, &val, 0);
+  }
+}
+
+static
 int __table_get_size
   (td_t* db, const char* table, unsigned* nrows)
 {
@@ -73,7 +91,7 @@ int table_insert_row
   unsigned i = 0;
   va_list ap = { 0 };
 
-  if (table_get_id(db, table, &id)) {
+  if (__table_get_id(db, table, &id)) {
     return ~0;
   }
   va_start(ap, nfields);
@@ -243,21 +261,3 @@ int table_get_size
   }
   return __table_set_size(db, table, *nrows);
 }
-
-int table_get_id
-  (td_t* db, const char* table, uint64_t* id)
-{
-  char keystr[ DB_KEY_SIZE ] = { 0 };
-  tdt_t key = { keystr, 0 }, val = { id, sizeof(*id) };
-
-  snprintf(keystr, sizeof(keystr), "SEQ_%s", table);
-  key.size = strlen(keystr);
-  if (td_get(db, &key, &val, TDFLG_EXACT)) {
-    *id = 1;
-    return td_put(db, &key, &val, 0);
-  } else {
-    ++(*id);
-    return td_put(db, &key, &val, 0);
-  }
-}
-
