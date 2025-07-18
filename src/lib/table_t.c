@@ -239,22 +239,25 @@ int __table_iterate_rows
       foundid = strtoull(numstr, 0, 10);
       if (foundid != id) {
         id = foundid;
-        int r = fnc(id, &row, arg);
-        switch (r) {
-        case 0:
-          row_deep_free(&row);
-          break;
-        case DB_ITERATE_STOP:
-          row_deep_free(&row);
-          return 0;
-        case DB_ITERATE_STOPNOFREE:
-          return 0;
-        case DB_ITERATE_CONTNOFREE:
-          break;
-        default:
-          row_deep_free(&row);
-          return r;
+        if (row.fields.count) {
+          int r = fnc(id, &row, arg);
+          switch (r) {
+          case 0:
+            row_deep_free(&row);
+            break;
+          case DB_ITERATE_STOP:
+            row_deep_free(&row);
+            return 0;
+          case DB_ITERATE_STOPNOFREE:
+            return 0;
+          case DB_ITERATE_CONTNOFREE:
+            break;
+          default:
+            row_deep_free(&row);
+            return r;
+          }
         }
+        row.rowid = id;
       }
       tuple_t tuple = { .value.data = val.data, .value.size = val.size };
       snprintf(tuple.name, sizeof(tuple.name), "%s", &(numstr[ 21 ]));
