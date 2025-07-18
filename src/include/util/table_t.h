@@ -18,7 +18,15 @@ typedef struct
 }
 tuple_t;
 
-MAKE_ARRAY_HEADER(tuple_t, row_)
+MAKE_ARRAY_HEADER(tuple_t, fields_)
+
+typedef struct
+{
+  fields_t      fields;
+  uint64_t      rowid;
+}
+row_t;
+
 MAKE_ARRAY_HEADER(row_t, table_)
 
 typedef struct
