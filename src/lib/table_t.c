@@ -192,11 +192,11 @@ int table_insert_row
 int table_delete_row
   (td_t* db, const char* table, uint64_t rowid)
 {
-  char searchkeystr[ DB_KEY_SIZE ];
-  tdt_t search = { searchkeystr, 0 };
+  char skeystr[ DB_KEY_SIZE ];
+  tdt_t search = { skeystr, 0 };
 
-  snprintf(searchkeystr, sizeof(searchkeystr), "TUP_%s_%"PRIu64, table, rowid);
-  search.size = strlen(searchkeystr);
+  snprintf(skeystr, sizeof(skeystr), "TUP_%s_%.20"PRIu64, table, rowid);
+  search.size = strlen(skeystr);
 
   if (td_del(db, &search, 0, TDFLG_DELETEALL) == 0) {
     unsigned nrows = 0;
