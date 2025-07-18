@@ -14,6 +14,7 @@
 ## -t <type>     Add function return type to recognize.
 ## -a <file>     Add contents of file to header (eg to include a type).
 ## -A <string>   Add string to header (eg a #include).
+## -x <file>     Exclude <file> from scanning.
 ## -r            Don't add warn_no_result pragmas.
 ##
 
@@ -29,6 +30,7 @@ my $hdef;
 my @prefix;
 my @strings;
 my $dontwarnnoresult = 0;
+my @excludes;
 
 for (my $i=0; $i < scalar(@ARGV); $i++) {
   if ($ARGV[ $i ] eq '-p') {
@@ -59,6 +61,12 @@ for (my $i=0; $i < scalar(@ARGV); $i++) {
     splice(@ARGV, $i, 1);
     my $string = splice(@ARGV, $i, 1);
     push @strings, $string;
+    --$i;
+  }
+  if ($ARGV[ $i ] eq '-x') {
+    splice(@ARGV, $i, 1);
+    my $exclude = splice(@ARGV, $i, 1);
+    push @excludes, $exclude;
     --$i;
   }
   if ($ARGV[ $i ] eq '-r') {
@@ -140,6 +148,7 @@ sub find {
     my @files;
     while (my $entry = readdir(DIR)) {
       next if ($entry eq '.' || $entry eq '..');
+      next if (excluded($dir, $entry));
       if ($pattern) {
         next if ($entry !~ /$pattern/);
       }
@@ -162,6 +171,16 @@ sub find {
       }
     }
   }
+}
+
+sub excluded
+{
+  my ($dir, $file) = @_;
+  foreach my $x (@excludes) {
+    return 1 if ($x =~ /^\*\// && $file eq $x);
+    return 1 if ("$dir/$file" eq $x);
+  }
+  return 0;
 }
 
 1;

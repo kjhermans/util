@@ -145,64 +145,6 @@ int strxypos
   (char* string, unsigned pos, unsigned vector[ 2 ])
   __attribute__ ((warn_unused_result));
 
-/* declared in ./table_t.c */
-extern
-void row_deep_free
-  (row_t* row);
-
-/* declared in ./table_t.c */
-extern
-void table_deep_free
-  (table_t* table);
-
-/* declared in ./table_t.c */
-extern
-int table_update_row
-  (td_t* db, const char* table, uint64_t rowid, unsigned nfields, ...)
-  __attribute__ ((warn_unused_result));
-
-/* declared in ./table_t.c */
-extern
-int table_insert_row
-  (td_t* db, const char* table, unsigned nfields, ...)
-  __attribute__ ((warn_unused_result));
-
-/* declared in ./table_t.c */
-extern
-int table_delete_row
-  (td_t* db, const char* table, uint64_t rowid)
-  __attribute__ ((warn_unused_result));
-
-/* declared in ./table_t.c */
-extern
-int table_iterate_rows
-  (td_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg)
-  __attribute__ ((warn_unused_result));
-
-/* declared in ./table_t.c */
-extern
-int table_get_block
-  (
-    td_t* db,
-    const char* table,
-    table_t* result,
-    uint64_t start,
-    unsigned length
-  )
-  __attribute__ ((warn_unused_result));
-
-/* declared in ./table_t.c */
-extern
-int table_get_row
-  (td_t* db, const char* table, uint64_t rowid, row_t* row)
-  __attribute__ ((warn_unused_result));
-
-/* declared in ./table_t.c */
-extern
-int table_get_size
-  (td_t* db, const char* table, unsigned* nrows)
-  __attribute__ ((warn_unused_result));
-
 /* declared in ./vec_t.c */
 extern
 void vec_printf
