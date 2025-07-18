@@ -57,6 +57,10 @@ void table_deep_free
   (table_t* table);
 
 extern
+char* row_get_as_string
+  (row_t* row, char* key);
+
+extern
 int table_insert_row
   (td_t* db, const char* table, unsigned nfields, ...);
 

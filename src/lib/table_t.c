@@ -29,6 +29,17 @@ void table_deep_free
   memset(table, 0, sizeof(*table));
 }
 
+char* row_get_as_string
+  (row_t* row, char* key)
+{
+  for (unsigned i=0; i < row->fields.count; i++) {
+    if (0 == strcmp(key, row->fields.list[ i ].name)) {
+      return (char*)row->fields.list[ i ].value.data;
+    }
+  }
+  return NULL;
+}
+
 static
 int __table_get_id
   (td_t* db, const char* table, uint64_t* id)
