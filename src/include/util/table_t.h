@@ -90,4 +90,8 @@ extern
 int table_iterate_rows
   (td_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg);
 
+extern
+int table_get_size
+  (td_t* db, const char* table, unsigned* nrows);
+
 #endif
