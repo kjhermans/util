@@ -108,7 +108,7 @@ int __table_update_row
     int64_t fieldvalue_int = 0;
     double fieldvalue_float = 0;
     char keystr[ DB_KEY_SIZE ];
-    tdt_t key = { keystr, 0 }, val = { fieldvalue_str, 0 };
+    tdt_t key = { keystr, 0 }, val = { 0 };
 
     switch (fieldtype) {
     case DB_FIELDTYPE_NULL:
@@ -137,6 +137,7 @@ int __table_update_row
     snprintf(keystr, sizeof(keystr),
              "TUP_%s_%.20"PRIu64"_%s", table, id, fieldname);
     key.size = strlen(keystr);
+    val.data = fieldvalue_str;
     val.size = strlen(fieldvalue_str);
     if (td_put(db, &key, &val, 0)) {
       return ~0;
@@ -237,7 +238,7 @@ int __table_iterate_rows
     return ~0;
   }
   while (1) {
-    char keystr[ DB_KEY_SIZE ];
+    char keystr[ DB_KEY_SIZE ] = { 0 };
     tdt_t key = { keystr, sizeof(keystr) };
     tdt_t val = { 0 };
     if (tdc_get(&cursor, &key, &val, TDFLG_ALLOCTDT) == 0) {
