@@ -202,19 +202,27 @@ int table_delete_row
   return ~0;
 }
 
-int table_iterate_rows
-  (td_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg)
+static
+int __table_iterate_rows
+  (
+    td_t* db,
+    const char* table,
+    uint64_t start,
+    int(*fnc)(uint64_t,row_t*,void*),
+    void* arg
+  )
 {
   tdc_t cursor;
-  char searchkeystr[ DB_KEY_SIZE ];
-  tdt_t search = { searchkeystr, 0 };
+  char skeystr[ DB_KEY_SIZE ];
+  tdt_t search = { skeystr, 0 };
   uint64_t id = 0;
   row_t row = { 0 };
+  unsigned off_num = strlen(table) + 5;
 
-  snprintf(searchkeystr, sizeof(searchkeystr), "TUP_%s_", table);
-  search.size = strlen(searchkeystr);
+  snprintf(skeystr, sizeof(skeystr), "TUP_%s_%.20"PRIu64, table, start);
+  search.size = strlen(skeystr);
   tdc_init(db, &cursor);
-  if (tdc_mov(&cursor, &search, TDFLG_PARTIAL|TDFLG_EXACT)) {
+  if (tdc_mov(&cursor, &search, TDFLG_PARTIAL)) {
     return ~0;
   }
   while (1) {
@@ -222,15 +230,29 @@ int table_iterate_rows
     tdt_t key = { keystr, sizeof(keystr) };
     tdt_t val = { 0 };
     if (tdc_get(&cursor, &key, &val, TDFLG_ALLOCTDT) == 0) {
-      char* numstr = key.data + search.size;
+      char* numstr = key.data + off_num;
       uint64_t foundid;
+      if (0 != memcmp(key.data, skeystr, off_num)) {
+        break;
+      }
       numstr[ 20 ] = 0;
       foundid = strtoull(numstr, 0, 10);
       if (foundid != id) {
         id = foundid;
         int r = fnc(id, &row, arg);
-        row_deep_free(&row);
-        if (r) {
+        switch (r) {
+        case 0:
+          row_deep_free(&row);
+          break;
+        case DB_ITERATE_STOP:
+          row_deep_free(&row);
+          return 0;
+        case DB_ITERATE_STOPNOFREE:
+          return 0;
+        case DB_ITERATE_CONTNOFREE:
+          break;
+        default:
+          row_deep_free(&row);
           return r;
         }
       }
@@ -244,10 +266,77 @@ int table_iterate_rows
   }
   if (row.count) {
     int r = fnc(id, &row, arg);
-    row_deep_free(&row);
-    return r;
+    switch (r) {
+    case 0:
+      row_deep_free(&row);
+      break;
+    case DB_ITERATE_STOP:
+      row_deep_free(&row);
+      return 0;
+    case DB_ITERATE_STOPNOFREE:
+      return 0;
+    case DB_ITERATE_CONTNOFREE:
+      break;
+    default:
+      row_deep_free(&row);
+      return r;
+    }
   }
   return 0;
+}
+
+int table_iterate_rows
+  (td_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg)
+{
+  return __table_iterate_rows(db, table, (uint64_t)0, fnc, arg);
+}
+
+static
+int __table_fill_block
+  (uint64_t rowid, row_t* row, void* arg)
+{
+  table_t* table = arg;
+  (void)rowid;
+
+  if (table->count == table->allocated) {
+    return DB_ITERATE_STOPNOFREE;
+  } else {
+    table_push(table, *row);
+    return DB_ITERATE_CONTNOFREE;
+  }
+}
+
+int table_get_block
+  (
+    td_t* db,
+    const char* table,
+    table_t* result,
+    uint64_t start,
+    unsigned length
+  )
+{
+  if (length == 0) {
+    return 0;
+  }
+  result->allocated = result->count + length;
+  result->list = realloc(result->list, sizeof(row_t) * result->allocated);
+  return __table_iterate_rows(db, table, start, __table_fill_block, result);
+}
+
+static
+int  __table_get_row
+  (uint64_t rowid, row_t* row, void* arg)
+{
+  row_t** result = arg;
+  (void)rowid;
+  **result = *row;
+  return DB_ITERATE_STOPNOFREE;
+}
+
+int table_get_row
+  (td_t* db, const char* table, uint64_t rowid, row_t* row)
+{
+  return __table_iterate_rows(db, table, rowid, __table_get_row, &row);
 }
 
 int table_get_size

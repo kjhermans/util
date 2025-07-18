@@ -181,6 +181,24 @@ int table_iterate_rows
 
 /* declared in ./table_t.c */
 extern
+int table_get_block
+  (
+    td_t* db,
+    const char* table,
+    table_t* result,
+    uint64_t start,
+    unsigned length
+  )
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./table_t.c */
+extern
+int table_get_row
+  (td_t* db, const char* table, uint64_t rowid, row_t* row)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./table_t.c */
+extern
 int table_get_size
   (td_t* db, const char* table, unsigned* nrows)
   __attribute__ ((warn_unused_result));

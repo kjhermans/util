@@ -36,6 +36,10 @@ cache_t;
 #define DB_FIELDTYPE_FLOAT      3
 #define DB_FIELDTYPE_STRING     4
 
+#define DB_ITERATE_STOP         1
+#define DB_ITERATE_STOPNOFREE   2
+#define DB_ITERATE_CONTNOFREE   3
+
 extern
 void row_deep_free
   (row_t* row);
@@ -55,6 +59,20 @@ int table_update_row
 extern
 int table_delete_row
   (td_t* db, const char* table, uint64_t rowid);
+
+extern
+int table_get_row
+  (td_t* db, const char* table, uint64_t rowid, row_t* row);
+
+extern
+int table_get_block
+  (
+    td_t* db,
+    const char* table,
+    table_t* result,
+    uint64_t start,
+    unsigned length
+  );
 
 extern
 int table_iterate_rows
