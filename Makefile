@@ -1,6 +1,9 @@
 all:
 	cd src && make
 
+debug:
+	@cd src && make DEBUG="-D_DEBUG=1"
+
 .PHONY: test
 
 test:
