@@ -133,6 +133,20 @@ void queryargs_
     char** value
   );
 
+/* declared in ./queryargs.c */
+extern
+int queryargs_as_int
+  (
+    unsigned argc,
+    char* argv[],
+    char option,
+    char* longoption,
+    unsigned index,
+    char** remainder,
+    char** value
+  )
+  __attribute__ ((warn_unused_result));
+
 /* declared in ./str2int_map.c */
 extern
 char* str2int_map_reverse_lookup

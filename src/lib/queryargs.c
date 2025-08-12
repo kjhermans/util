@@ -130,3 +130,27 @@ void queryargs_
   );
   (void)e;
 }
+
+#include <stdlib.h>
+
+int queryargs_as_int
+  (
+    unsigned argc,
+    char* argv[],
+    char option,
+    char* longoption,
+    unsigned index,
+    char** remainder,
+    char** value
+  )
+{
+  char* _v = 0;
+  if (queryargs(argc, argv, option, longoption, index, 1, remainder, &_v) == 0)
+  {
+    if (value) {
+      *value = _v;
+    }
+    return strtol(_v, 0, 10);
+  }
+  return 0;
+}
