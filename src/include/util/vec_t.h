@@ -101,7 +101,7 @@ int vec_base64_decode
   (vec_t* vec);
 
 void vec_base64_encode
-  (vec_t* vec);
+  (vec_t* vec, int spaced);
 
 /** Error correction codes **/
 

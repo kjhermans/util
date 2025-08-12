@@ -262,7 +262,7 @@ int vec_base64_decode
 /* declared in ./vec_t.c */
 extern
 void vec_base64_encode
-  (vec_t* vec);
+  (vec_t* vec, int space);
 
 /* declared in ./vec_t.c */
 extern

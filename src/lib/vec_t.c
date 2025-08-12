@@ -397,8 +397,9 @@ int vec_base64_decode
 }
 
 void vec_base64_encode
-  (vec_t* vec)
+  (vec_t* vec, int space)
 {
+  unsigned x = 0;
   unsigned m, d;
   unsigned origlen = vec->size;
   char* b64chars =
@@ -413,6 +414,10 @@ void vec_base64_encode
       m = 999;
     }
     for (d=0; d < m; d += 3) {
+      if (space && x > 60) {
+        x = 0;
+        vec_appendchr(vec, '\n');
+      }
       if (d == m-1) {
         vec_appendchr(vec, b64chars[ vec->data[ d ] >> 2 ]);
         vec_appendchr(vec, b64chars[ ((vec->data[ d ] & 0x03) << 4) ]);
