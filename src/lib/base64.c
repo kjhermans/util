@@ -11,21 +11,27 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int b64_encodedlength(int l) {
+int b64_encodedlength
+  (int l)
+{
   return (((l+2)/3)*4)+1;
   // the last '1' is for '\0'
 }
 
-char* b64_encode(void* _data, int datalength, char* out) {
+static
+char* __b64_encode
+  (void* _data, int datalength, char* out, int spaced)
+{
+  unsigned x = 0;
   unsigned char* data = _data;
   char alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-  int i, index;
-  for (i=0, index=0; i<datalength; i+=3, index+=4) {
+  int i, index = 0;
+  if (spaced) {
+    out[index++] = '\n';
+    out[index] = 0;
+  }
+  for (i=0; i<datalength; i+=3, index+=4) {
     int quad = 0;
     int trip = 0;
     int val = (0xFF & (int) data[i]);
@@ -46,12 +52,45 @@ char* b64_encode(void* _data, int datalength, char* out) {
     out[index+1] = alphabet[val & 0x3F];
     val >>= 6;
     out[index+0] = alphabet[val & 0x3F];
+    if (spaced) {
+      if (++x >= 16) {
+        x=0;
+        out[index+4] = '\n';
+        ++index;
+      }
+    }
   }
   out[index] = '\0';
   return out;
 }
 
-int b64_decodedlength(char* data) {
+char* b64_encode
+  (void* _data, int datalength, char* out)
+{
+  return __b64_encode(_data, datalength, out, 0);
+}
+
+char* b64_encode_spaced
+  (void* _data, unsigned size, char* out)
+{
+  return __b64_encode(_data, size, out, 1);
+/*
+  char* block = b64_encode(_data, size, out);
+  unsigned l = strlen(block);
+
+  for (unsigned i=0; i < l; i += 64) {
+    memmove(block + i + 1, block + i, 1 + l - i);
+    block[ i ] = '\n';
+    ++i;
+    ++l;
+  }
+  return block;
+*/
+}
+
+int b64_decodedlength
+  (char* data)
+{
   int datalength = strlen(data);
   int len = ((datalength + 3) / 4) * 3;
   if (datalength>0 && data[datalength-1] == '=') --len;
@@ -59,7 +98,9 @@ int b64_decodedlength(char* data) {
   return len;
 }
 
-char* b64_decode(char* data, char* out) {
+char* b64_decode
+  (char* data, char* out)
+{
   int datalength = strlen(data);
   int len = ((datalength + 3) / 4) * 3;
   int shift = 0;   // # of excess bits stored in accum
@@ -91,10 +132,6 @@ char* b64_decode(char* data, char* out) {
   if (index != len) return NULL;
   return out;
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 #ifdef __cplusplus
 }

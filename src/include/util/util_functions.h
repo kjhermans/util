@@ -35,6 +35,12 @@ char* b64_encode
 
 /* declared in ./base64.c */
 extern
+char* b64_encode_spaced
+  (void* _data, unsigned size, char* out)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./base64.c */
+extern
 int b64_decodedlength
   (char* data)
   __attribute__ ((warn_unused_result));
