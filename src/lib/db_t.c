@@ -488,34 +488,24 @@ int db_get
   ASSERT(key)
   ASSERT(value)
 
-  off_t last_match = -1;
-  struct db_tuple last_tuple = { 0 };
-  struct db_cursor cursor = { 0 };
+  struct db_path path = { 0 };
+  off_t value_offset;
 
-  if (db_cursor_init(db, &cursor)) { RETURN_ERR(DB_ERROR) }
-  while (1) {
-    if (0 == strcmp(cursor.tuple.key, key)) {
-      last_match = cursor.offset;
-      last_tuple = cursor.tuple;
-    }
-    if (db_cursor_next(&cursor)) {
-      if (last_match != -1) {
-        off_t valueoffset =
-          last_match + (2 * sizeof(unsigned)) + last_tuple.keysize;
-        if (lseek(db->fd, valueoffset, SEEK_SET) != valueoffset) {
-          RETURN_ERR(DB_ERROR)
-        }
-        value->data = malloc(last_tuple.valuesize + 1);
-        value->size = last_tuple.valuesize;
-        if (read(db->fd, value->data, value->size) != value->size) {
-          free(value->data);
-          RETURN_ERR(DB_ERROR)
-        }
-        RETURN_OK
-      }
-    }
+  CHECK(__db_index_traverse(db, key, 0, &path));
+  if (!(path.found)) {
+    RETURN_ERR(DB_ERR_NOTFOUND)
   }
-  RETURN_ERR(DB_ERROR)
+
+  value_offset =
+    path.nodes[ path.length-1 ].node.tuple_offset +
+    (2 * sizeof(unsigned)) +
+    path.nodes[ path.length-1 ].tuple.keysize;
+
+  value->size = path.nodes[ path.length-1 ].tuple.valuesize;
+  value->data = calloc(value->size + 1, 1);
+  CHECK(__db_read_at(db->fd, value_offset, value->data, value->size));
+
+  RETURN_OK
 }
 
 int db_del
