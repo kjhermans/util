@@ -152,7 +152,7 @@ void __db_path_debug
       "- Level: %u\n"
       , i
       , path->offsets[ i ]
-      , path->nodes[ i ].tuple
+      , path->nodes[ i ].tuple_offset
       , path->nodes[ i ].level
     );
     for (unsigned j=0; j < path->nodes[ i ].level; j++) {
@@ -187,17 +187,16 @@ int __db_index_traverse
   ASSERT(key)
   ASSERT(path)
 
-
   /* Initial phase, setting up the path structure. */
   memset(path, 0, sizeof(*path));
-  CHECK(__db_ixnode_read(db, 0, &(path->nodes[ 0 ])));
+  CHECK(__db_ixnode_read(db, 0, &(path->nodes[ 0 ].node)));
   ++(path->length); /* Head node loaded. */
 
   /* Iteration phase. */
   while (1) {
 
-    struct db_path_node* node = &(path->nodes[ path->length-1 ]);
-    struct db_path_node* nextnode = &(path->nodes[ path->length ]);
+    struct db_path_node* node = &(path->nodes[ path->length-1 ].node);
+    struct db_path_node* nextnode = &(path->nodes[ path->length ].node);
     unsigned top = node->level;
 
     /* Descend into current node, skipping all zero next pointers. */
@@ -213,17 +212,16 @@ int __db_index_traverse
     /* Try next */
 TRYAGAIN:
     {
-      struct db_tuple tuple = { 0 };
-      path->offsets[ path->length ] = node->next[ top-1 ];
+      path->nodes[ path->length ].offset = node->next[ top-1 ];
       CHECK(
         __db_ixnode_read(
           db,
-          path->offsets[ path->length ],
-          &(path->nodes[ path->length ])
+          path->nodes[ path->length ].offset,
+          &(path->nodes[ path->length ].node)
         )
       );
-      CHECK(__db_tuple_read(db, nextnode->tuple, &tuple));
-      path->found = __db_compare(key, tuple.key, partial);
+      CHECK(__db_tuple_read(db, nextnode->tuple_offset, &(path->nodes[ path->length ].tuple)));
+      path->found = __db_compare(key, path->nodes[ path->length ].tuple.key, partial);
     }
 
     /* Compare */
@@ -235,8 +233,8 @@ TRYAGAIN:
 
     case 1: /* overshoot */
       if (nextnode->level == node->level) {
-        path->offsets[ path->length-1 ] = path->offsets[ path->length ];
-        path->nodes[ path->length-1 ] = path->nodes[ path->length ];
+        path->nodes[ path->length-1 ].offset = path->nodes[ path->length ].offset;
+        path->nodes[ path->length-1 ].node = path->nodes[ path->length ].node;
       } else { /* nextnode level must be smaller */
         ++(path->length);
       }
@@ -282,9 +280,9 @@ int __db_index_tuple
   switch (path.found) {
   case 0: /* found exact match; replace tuple */
     {
-      off_t offset = path.offsets[ path.length-1 ];
-      struct db_path_node* node = &(path.nodes[ path.length-1 ]);
-      node->tuple = offset;
+      off_t offset = path.nodes[ path.length-1 ].offset;
+      struct db_path_node* node = &(path.nodes[ path.length-1 ].node);
+      node->tuple_offset = offset;
       CHECK(__db_ixnode_write(db, offset, node));
     }
     break;
@@ -298,13 +296,13 @@ int __db_index_tuple
       off_t node_offset;
       unsigned n = 0;
       struct db_path_node node = {
-        .tuple = offset,
+        .tuple_offset = offset,
         .level = __db_random(DB_IXTUPSIZE-1),
         .next = { 0 }
       };
 
       for (unsigned i=path.length; i; i--) {
-        struct db_path_node* prevnode = &(path.nodes[ i-1 ]);
+        struct db_path_node* prevnode = &(path.nodes[ i-1 ].node);
         if (n >= node.level) { break; }
         while (n < prevnode->level) {
           node.next[ n ] = prevnode->next[ n ];
@@ -316,8 +314,8 @@ int __db_index_tuple
 
       n = 0;
       for (unsigned i=path.length; i; i--) {
-        off_t prevoffset = path.offsets[ i-1 ];
-        struct db_path_node* prevnode = &(path.nodes[ i-1 ]);
+        off_t prevoffset = path.nodes[ i-1 ].offset;
+        struct db_path_node* prevnode = &(path.nodes[ i-1 ].node);
         if (n >= node.level) { break; }
         while (n < prevnode->level) {
           prevnode->next[ n ] = node_offset;
@@ -340,7 +338,7 @@ int __db_reindex
 
   off_t off_db = 0;
   struct db_path_node node0 = {
-    .tuple = 0,
+    .tuple_offset = 0,
     .level = DB_IXTUPSIZE,
     .next = { 0 }
   };
@@ -547,9 +545,9 @@ int db_xcursor_move
   CHECK(__db_index_traverse(cursor->db, key, partial, &path));
   switch (path.found) {
   case 0:
-    cursor->node_offset = path.offsets[ path.length-1 ];
-    cursor->node = path.nodes[ path.length-1 ];
-    CHECK(__db_tuple_read(cursor->db, cursor->node.tuple, &(cursor->tuple)));
+    cursor->node_offset = path.nodes[ path.length-1 ].offset;
+    cursor->node = path.nodes[ path.length-1 ].node;
+    cursor->tuple = path.nodes[ path.length-1 ].tuple;
     break;
   case 1:
     if (path.length == 1) {
@@ -562,9 +560,9 @@ int db_xcursor_move
     if (exact) {
       RETURN_ERR(DB_ERR_NOTFOUND);
     } else {
-      cursor->node_offset = path.offsets[ path.length-1 ];
-      cursor->node = path.nodes[ path.length-1 ];
-      CHECK(__db_tuple_read(cursor->db, cursor->node.tuple, &(cursor->tuple)));
+      cursor->node_offset = path.nodes[ path.length-1 ].offset;
+      cursor->node = path.nodes[ path.length-1 ].node;
+      cursor->tuple = path.nodes[ path.length-1 ].tuple;
     }
     break;
   }
@@ -583,7 +581,7 @@ int db_xcursor_next
     RETURN_ERR(DB_ERR_EOF);
   }
   CHECK(__db_ixnode_read(cursor->db, cursor->node_offset, &(cursor->node)));
-  CHECK(__db_tuple_read(cursor->db, cursor->node.tuple, &(cursor->tuple)));
+  CHECK(__db_tuple_read(cursor->db, cursor->node.tuple_offset, &(cursor->tuple)));
   if (cursor->tuple.flags & DB_FLAG_DEL) {
     return db_xcursor_next(cursor);
   }
@@ -620,7 +618,7 @@ int db_xcursor_get
   ASSERT(value)
 
   off_t value_offset
-          = cursor->node.tuple +
+          = cursor->node.tuple_offset +
             (2 * sizeof(unsigned)) + cursor->tuple.keysize;
 
   *key = cursor->tuple.key;
@@ -661,7 +659,7 @@ void db_debug
       "- tuple: %u\n"
       "- level: %u\n"
       , off_ix
-      , node.tuple
+      , node.tuple_offset
       , node.level
     );
     for (unsigned i=0; i < node.level; i++) {

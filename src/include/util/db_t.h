@@ -38,15 +38,18 @@ struct db_tuple
 
 struct db_path_node
 {
-  unsigned              tuple;
+  unsigned              tuple_offset;
   unsigned              level;
   unsigned              next[ DB_IXTUPSIZE ];
 };
 
 struct db_path
 {
-  struct db_path_node   nodes[ DB_IXTUPSIZE ];
-  off_t                 offsets[ DB_IXTUPSIZE ];
+  struct {
+    off_t                 offset;
+    struct db_path_node   node;
+    struct db_tuple       tuple;
+  }                     nodes[ DB_IXTUPSIZE ];
   unsigned              length;
   int                   found;
 };
