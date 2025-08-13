@@ -514,28 +514,26 @@ int db_del
   DEBUGFUNCTION
   ASSERT(db)
   ASSERT(key)
+  ASSERT(value)
 
-  unsigned del = 0;
-  struct db_cursor cursor = { 0 };
+  struct db_path path = { 0 };
 
-  if (db_cursor_init(db, &cursor)) { RETURN_ERR(DB_ERROR) }
-  while (1) {
-    if (0 == strcmp(cursor.tuple.key, key)) {
-      ++del;
-      cursor.tuple.flags |= DB_FLAG_DEL;
-      if (__db_tuple_write(db, cursor.offset, &(cursor.tuple))) {
-        RETURN_ERR(DB_ERROR)
-      }
-    }
-    if (db_cursor_next(&cursor)) {
-      break;
-    }
+  CHECK(__db_index_traverse(db, key, 0, &path));
+  if (!(path.found)) {
+    RETURN_ERR(DB_ERR_NOTFOUND)
   }
-  if (del) {
-    RETURN_OK
-  } else {
-    RETURN_ERR(DB_ERROR)
-  }
+
+  path.nodes[ path.length-1 ].tuple.flags |= DB_FLAG_DEL;
+
+  CHECK(
+    __db_tuple_write(
+      db,
+      path.nodes[ path.length-1 ].node.tuple_offset,
+      &(path.nodes[ path.length-1 ].tuple)
+    )
+  );
+
+  RETURN_OK
 }
 
 int db_xcursor_move
