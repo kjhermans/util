@@ -18,6 +18,7 @@ fnchdr: ../include/util/util_functions.h
 	  -A '#include <btree/td.h>' \
 	  -x ./table_t.c \
 	  -x ./db_t.c \
+	  -x ./xtransport.c \
 	    > ../include/util/util_functions.h
 
 $(TARGET): $(OBJECTS)
