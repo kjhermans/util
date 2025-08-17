@@ -153,6 +153,18 @@ int queryargs_as_int
   )
   __attribute__ ((warn_unused_result));
 
+/* declared in ./srv_clientsocket_udp.c */
+extern
+int srv_clientsocket_udp
+  (uint32_t ip, uint16_t port)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./srv_serversocket_udp.c */
+extern
+int srv_serversocket_udp
+  (uint32_t ip, uint16_t port)
+  __attribute__ ((warn_unused_result));
+
 /* declared in ./str2int_map.c */
 extern
 char* str2int_map_reverse_lookup
