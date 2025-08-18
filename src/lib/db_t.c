@@ -638,17 +638,23 @@ int db_xcursor_get
 {
   DEBUGFUNCTION
   ASSERT(cursor)
-  ASSERT(key)
-  ASSERT(value)
 
   off_t value_offset
           = cursor->node.tuple_offset +
             (2 * sizeof(unsigned)) + cursor->tuple.keysize;
 
-  *key = cursor->tuple.key;
-  value->size = cursor->tuple.valuesize;
-  value->data = calloc(value->size + 1, 1);
-  CHECK(__db_read_at(cursor->db->fd, value_offset, value->data, value->size));
+  if (key) {
+    *key = cursor->tuple.key;
+  }
+  if (value) {
+    value->size = cursor->tuple.valuesize;
+    value->data = calloc(value->size + 1, 1);
+    CHECK(__db_read_at(cursor->db->fd, value_offset, value->data, value->size));
+  }
+
+  RETURN_OK
+}
+
 
   RETURN_OK
 }
