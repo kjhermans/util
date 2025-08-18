@@ -267,7 +267,7 @@ unsigned __db_random
 
 static
 int __db_index_tuple
-  (const db_t* db, const off_t offset, const struct db_tuple* tuple)
+  (const db_t* db, const off_t tuple_offset, const struct db_tuple* tuple)
 {
   DEBUGFUNCTION
   ASSERT(db)
@@ -280,10 +280,10 @@ int __db_index_tuple
   switch (path.found) {
   case 0: /* found exact match; replace tuple */
     {
-      off_t offset = path.nodes[ path.length-1 ].offset;
+      off_t node_offset = path.nodes[ path.length-1 ].offset;
       struct db_path_node* node = &(path.nodes[ path.length-1 ].node);
-      node->tuple_offset = offset;
-      CHECK(__db_ixnode_write(db, offset, node));
+      node->tuple_offset = tuple_offset;
+      CHECK(__db_ixnode_write(db, node_offset, node));
     }
     break;
 
@@ -296,7 +296,7 @@ int __db_index_tuple
       off_t node_offset;
       unsigned n = 0;
       struct db_path_node node = {
-        .tuple_offset = offset,
+        .tuple_offset = tuple_offset,
         .level = __db_random(DB_IXTUPSIZE-1),
         .next = { 0 }
       };
