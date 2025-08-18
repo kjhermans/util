@@ -58,7 +58,7 @@ int __db_tuple_read
   if (read(db->fd, tuple->key, tuple->keysize) != tuple->keysize) {
     RETURN_ERR(DB_ERROR)
   }
-  tuple->key[ DB_KEYSIZE-1 ] = 0;
+  tuple->key[ tuple->keysize ] = 0;
 
   RETURN_OK
 }
