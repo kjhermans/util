@@ -1,3 +1,8 @@
+/**
+ * This C file implements a table with rows of named fields.
+ * It does this by using functionality from the btree library.
+ */
+
 #include <inttypes.h>
 
 #include <util/table_t.h>
@@ -42,63 +47,61 @@ char* row_get_as_string
 
 static
 int __table_get_id
-  (td_t* db, const char* table, uint64_t* id)
+  (db_t* db, const char* table, uint64_t* id)
 {
   char keystr[ DB_KEY_SIZE ] = { 0 };
-  tdt_t key = { keystr, 0 }, val = { id, sizeof(*id) };
+  vec_t val = { (unsigned char*)id, sizeof(*id) };
 
   snprintf(keystr, sizeof(keystr), "SEQ_%s", table);
-  key.size = strlen(keystr);
-  if (td_get(db, &key, &val, TDFLG_EXACT)) {
+  if (db_get(db, keystr, &val)) {
     *id = 1;
-    return td_put(db, &key, &val, 0);
+    return db_put(db, keystr, &val);
   } else {
     ++(*id);
-    return td_put(db, &key, &val, 0);
+    return db_put(db, keystr, &val);
   }
 }
 
 static
 int __table_get_size
-  (td_t* db, const char* table, unsigned* nrows)
+  (db_t* db, const char* table, unsigned* nrows)
 {
   char keystr[ DB_KEY_SIZE ];
-  tdt_t cache = { keystr, 0 };
-  tdt_t value = { nrows, sizeof(unsigned) };
+  vec_t value = { (unsigned char*)nrows, sizeof(unsigned) };
 
   snprintf(keystr, sizeof(keystr), "SIZ_%s", table);
-  cache.size = strlen(keystr);
-  return td_get(db, &cache, &value, TDFLG_EXACT);
+  return db_get(db, keystr, &value);
 }
 
 static
 int __table_set_size
-  (td_t* db, const char* table, unsigned nrows)
+  (db_t* db, const char* table, unsigned nrows)
 {
   char keystr[ DB_KEY_SIZE ];
-  tdt_t cache = { keystr, 0 };
-  tdt_t value = { &nrows, sizeof(unsigned) };
+  vec_t value = { (unsigned char*)(&nrows), sizeof(unsigned) };
 
   snprintf(keystr, sizeof(keystr), "SIZ_%s", table);
-  cache.size = strlen(keystr);
-  return td_put(db, &cache, &value, 0);
+  return db_put(db, keystr, &value);
 }
 
 /**
  * Example:
+ *
 
 __table_update_row(
-  &db, "Users", 13204,
-  3,
-  "Firstname", DB_TYPE_STRING, "Katherine",
-  "Emailaddress", DB_TYPE_NULL,                // Note the lack of 3rd param
+  &db,
+  "Users",                                  // table name
+  13204,                                    // rowid
+  3,                                        // 3 fields follow
+  "Firstname", DB_TYPE_STRING, "Katherine", // Fieldname, type, value
+  "Emailaddress", DB_TYPE_NULL,             // Note no 3rd param with NULL
   "Age", DB_TYPE_INTEGER, 32
 );
 
  */
 static
 int __table_update_row
-  (td_t* db, const char* table, uint64_t id, unsigned nfields, va_list ap)
+  (db_t* db, const char* table, uint64_t id, unsigned nfields, va_list ap)
 {
   for (unsigned i=0; i < nfields; i++) {
     const char* fieldname = va_arg(ap, const char*);
@@ -108,7 +111,7 @@ int __table_update_row
     int64_t fieldvalue_int = 0;
     double fieldvalue_float = 0;
     char keystr[ DB_KEY_SIZE ];
-    tdt_t key = { keystr, 0 }, val = { 0 };
+    vec_t val = { 0 };
 
     switch (fieldtype) {
     case DB_FIELDTYPE_NULL:
@@ -136,10 +139,9 @@ int __table_update_row
     }
     snprintf(keystr, sizeof(keystr),
              "TUP_%s_%.20"PRIu64"_%s", table, id, fieldname);
-    key.size = strlen(keystr);
-    val.data = fieldvalue_str;
+    val.data = (unsigned char*)fieldvalue_str;
     val.size = strlen(fieldvalue_str);
-    if (td_put(db, &key, &val, 0)) {
+    if (db_put(db, keystr, &val)) {
       return ~0;
     }
   }
@@ -147,7 +149,7 @@ int __table_update_row
 }
 
 int table_update_row
-  (td_t* db, const char* table, uint64_t rowid, unsigned nfields, ...)
+  (db_t* db, const char* table, uint64_t rowid, unsigned nfields, ...)
 {
   va_list ap = { 0 };
   int r;
@@ -162,7 +164,7 @@ int table_update_row
 }
 
 int table_insert_row
-  (td_t* db, const char* table, unsigned nfields, ...)
+  (db_t* db, const char* table, unsigned nfields, ...)
 {
   uint64_t id = 0;
   va_list ap = { 0 };
@@ -191,15 +193,17 @@ int table_insert_row
 }
 
 int table_delete_row
-  (td_t* db, const char* table, uint64_t rowid)
+  (db_t* db, const char* table, uint64_t rowid)
 {
   char skeystr[ DB_KEY_SIZE ];
-  tdt_t search = { skeystr, 0 };
+  unsigned n = 0;
 
   snprintf(skeystr, sizeof(skeystr), "TUP_%s_%.20"PRIu64, table, rowid);
-  search.size = strlen(skeystr);
 
-  if (td_del(db, &search, 0, TDFLG_DELETEALL) == 0) {
+  while (db_del2(db, skeystr, DB_FLAG_PARTIAL|DB_FLAG_EXACT) == 0) {
+    ++n;
+  }
+  if (n) {
     unsigned nrows = 0;
     if (__table_get_size(db, table, &nrows) == 0) {
       if (nrows == 0) {
@@ -217,38 +221,36 @@ int table_delete_row
 static
 int __table_iterate_rows
   (
-    td_t* db,
+    db_t* db,
     const char* table,
     uint64_t start,
     int(*fnc)(uint64_t,row_t*,void*),
     void* arg
   )
 {
-  tdc_t cursor;
+  struct db_xcursor cursor = { 0 };
   char skeystr[ DB_KEY_SIZE ];
-  tdt_t search = { skeystr, 0 };
   uint64_t id = 0;
   row_t row = { 0 };
   unsigned off_num = strlen(table) + 5;
 
   snprintf(skeystr, sizeof(skeystr), "TUP_%s_%.20"PRIu64, table, start);
-  search.size = strlen(skeystr);
-  tdc_init(db, &cursor);
-  if (tdc_mov(&cursor, &search, TDFLG_PARTIAL)) {
+  db_xcursor_init(db, &cursor);
+  if (db_xcursor_move(&cursor, skeystr, DB_FLAG_PARTIAL|DB_FLAG_EXACT)) {
     return ~0;
   }
   while (1) {
-    char keystr[ DB_KEY_SIZE ] = { 0 };
-    tdt_t key = { keystr, sizeof(keystr) };
-    tdt_t val = { 0 };
-    if (tdc_get(&cursor, &key, &val, TDFLG_ALLOCTDT) == 0) {
-      char* numstr = key.data + off_num;
+    char* key = 0;
+    vec_t val = { 0 };
+    if (db_xcursor_get(&cursor, &key, &val) == 0) {
+      char* numstr = key + off_num;
       uint64_t foundid;
-      if (0 != memcmp(key.data, skeystr, off_num)) {
+      if (0 != memcmp(key, skeystr, off_num)) {
         break;
       }
       numstr[ 20 ] = 0;
       foundid = strtoull(numstr, 0, 10);
+//fprintf(stderr, "ROWID %"PRIu64"; key '%s' (%u) value '%s' (%u)\n", foundid, (char*)key.data, key.size, (char*)val.data, val.size);
       if (foundid != id) {
         id = foundid;
         if (row.fields.count) {
@@ -275,7 +277,7 @@ int __table_iterate_rows
       snprintf(tuple.name, sizeof(tuple.name), "%s", &(numstr[ 21 ]));
       fields_push(&(row.fields), tuple);
     }
-    if (tdc_nxt(&cursor, 0, 0, 0)) {
+    if (db_xcursor_next(&cursor)) {
       break;
     }
   }
@@ -301,7 +303,7 @@ int __table_iterate_rows
 }
 
 int table_iterate_rows
-  (td_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg)
+  (db_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg)
 {
   return __table_iterate_rows(db, table, (uint64_t)0, fnc, arg);
 }
@@ -323,7 +325,7 @@ int __table_fill_block
 
 int table_get_block
   (
-    td_t* db,
+    db_t* db,
     const char* table,
     table_t* result,
     uint64_t start,
@@ -349,35 +351,32 @@ int  __table_get_row
 }
 
 int table_get_row
-  (td_t* db, const char* table, uint64_t rowid, row_t* row)
+  (db_t* db, const char* table, uint64_t rowid, row_t* row)
 {
   return __table_iterate_rows(db, table, rowid, __table_get_row, &row);
 }
 
 int table_get_size
-  (td_t* db, const char* table, unsigned* nrows)
+  (db_t* db, const char* table, unsigned* nrows)
 {
-  tdc_t cursor;
-  char searchkeystr[ DB_KEY_SIZE ];
-  tdt_t search = { searchkeystr, 0 };
+  struct db_xcursor cursor = { 0 };
+  char skey[ DB_KEY_SIZE ];
   uint64_t id = 0;
 
   if (__table_get_size(db, table, nrows) == 0) {
     return 0;
   }
 
-  snprintf(searchkeystr, sizeof(searchkeystr), "TUP_%s_", table);
-  search.size = strlen(searchkeystr);
-  tdc_init(db, &cursor);
-  if (tdc_mov(&cursor, &search, TDFLG_PARTIAL|TDFLG_EXACT)) {
+  snprintf(skey, sizeof(skey), "TUP_%s_", table);
+  db_xcursor_init(db, &cursor);
+  if (db_xcursor_move(&cursor, skey, DB_FLAG_PARTIAL|DB_FLAG_EXACT)) {
     return ~0;
   }
   *nrows = 0;
   while (1) {
-    char keystr[ DB_KEY_SIZE ];
-    tdt_t key = { keystr, sizeof(keystr) };
-    if (tdc_get(&cursor, &key, 0, 0) == 0) {
-      char* numstr = key.data + search.size;
+    char* key;
+    if (db_xcursor_get(&cursor, &key, 0) == 0) {
+      char* numstr = key + strlen(skey); /* cache strlen(skey) ? */
       uint64_t foundid;
       numstr[ 20 ] = 0;
       foundid = strtoull(numstr, 0, 10);
@@ -386,7 +385,7 @@ int table_get_size
         ++(*nrows);
       }
     }
-    if (tdc_nxt(&cursor, 0, 0, 0)) {
+    if (db_xcursor_next(&cursor)) {
       break;
     }
   }

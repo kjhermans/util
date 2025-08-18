@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdio.h>
+//#include <util/db_t.h>
 #include <util/table_t.h>
-#include <sdbm_tree/td.h>
 #include <fcntl.h>
 #include <time.h>
 
@@ -25,12 +25,12 @@ int main
 
   srand(time(0));
 
-  td_t td = { 0 };
+  db_t db = { 0 };
 
-  td_open(&td, "/tmp/db.db", TDFLG_ALLOCTDT, O_RDWR|O_CREAT|O_TRUNC, 0644);
+  db_open(&db, "/tmp/db.db", O_RDWR|O_CREAT|O_TRUNC);
 
   {
-    if (table_insert_row(&td, "users", 3,
+    if (table_insert_row(&db, "users", 3,
           "user_name", DB_FIELDTYPE_STRING, "Katherine",
           "user_email", DB_FIELDTYPE_STRING, "foo@bar.com",
           "user_age", DB_FIELDTYPE_INTEGER, 32
@@ -44,7 +44,7 @@ int main
 
   {
     unsigned l = 0;
-    if (table_get_size(&td, "users", &l)) {
+    if (table_get_size(&db, "users", &l)) {
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }
@@ -57,13 +57,14 @@ int main
 
   {
     for (unsigned i=0; i < 128; i++) {
-      if (table_insert_row(&td, "users", 3,
+      if (table_insert_row(&db, "users", 3,
             "user_name", DB_FIELDTYPE_STRING, "Katherine",
             "user_email", DB_FIELDTYPE_STRING, "foo@bar.com",
             "user_age", DB_FIELDTYPE_INTEGER, 32
       ))
       {
         fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
+        db_debug(&db);
         return ~0;
       }
     }
@@ -72,7 +73,7 @@ int main
 
   {
     unsigned l = 0;
-    if (table_get_size(&td, "users", &l)) {
+    if (table_get_size(&db, "users", &l)) {
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }
@@ -85,7 +86,7 @@ int main
 
   {
     for (unsigned i=0; i < 127; i++) {
-      if (table_delete_row(&td, "users", (uint64_t)(i+1))) {
+      if (table_delete_row(&db, "users", (uint64_t)(i+1))) {
         fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
         return ~0;
       }
@@ -95,7 +96,7 @@ int main
 
   {
     unsigned l = 0;
-    if (table_get_size(&td, "users", &l)) {
+    if (table_get_size(&db, "users", &l)) {
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }
@@ -109,7 +110,7 @@ int main
   {
     char words[ 2 ][ 16 ];
     for (unsigned i=0; i < 128; i++) {
-      if (table_insert_row(&td, "users", 3,
+      if (table_insert_row(&db, "users", 3,
             "user_name", DB_FIELDTYPE_STRING, fakeword(words[ 0 ]),
             "user_email", DB_FIELDTYPE_STRING, fakeword(words[ 1 ]),
             "user_age", DB_FIELDTYPE_INTEGER, (rand() % 70)
@@ -124,7 +125,7 @@ int main
 
   {
     row_t row = { 0 };
-    if (table_get_row(&td, "users", 200, &row)) {
+    if (table_get_row(&db, "users", 200, &row)) {
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }

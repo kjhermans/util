@@ -7,7 +7,7 @@
 
 #include <util/vec_t.h>
 #include <util/array.h>
-#include <btree/td.h>
+#include <util/db_t.h>
 
 #define DB_KEY_SIZE             256
 
@@ -62,24 +62,24 @@ char* row_get_as_string
 
 extern
 int table_insert_row
-  (td_t* db, const char* table, unsigned nfields, ...);
+  (db_t* db, const char* table, unsigned nfields, ...);
 
 extern
 int table_update_row
-  (td_t* db, const char* table, uint64_t rowid, unsigned nfields, ...);
+  (db_t* db, const char* table, uint64_t rowid, unsigned nfields, ...);
 
 extern
 int table_delete_row
-  (td_t* db, const char* table, uint64_t rowid);
+  (db_t* db, const char* table, uint64_t rowid);
 
 extern
 int table_get_row
-  (td_t* db, const char* table, uint64_t rowid, row_t* row);
+  (db_t* db, const char* table, uint64_t rowid, row_t* row);
 
 extern
 int table_get_block
   (
-    td_t* db,
+    db_t* db,
     const char* table,
     table_t* result,
     uint64_t start,
@@ -88,10 +88,10 @@ int table_get_block
 
 extern
 int table_iterate_rows
-  (td_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg);
+  (db_t* db, const char* table, int(*fnc)(uint64_t,row_t*,void*), void* arg);
 
 extern
 int table_get_size
-  (td_t* db, const char* table, unsigned* nrows);
+  (db_t* db, const char* table, unsigned* nrows);
 
 #endif
