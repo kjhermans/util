@@ -478,8 +478,8 @@ int db_put
   RETURN_OK
 }
 
-int db_get
-  (const db_t* db, const char* key, vec_t* value)
+int db_get2
+  (const db_t* db, const char* key, vec_t* value, unsigned flags)
 {
   DEBUGFUNCTION
   ASSERT(db)
@@ -489,8 +489,8 @@ int db_get
   struct db_path path = { 0 };
   off_t value_offset;
 
-  CHECK(__db_index_traverse(db, key, 0, &path));
-  if (!(path.found)) {
+  CHECK(__db_index_traverse(db, key, (flags & DB_FLAG_PARTIAL), &path));
+  if ((flags & DB_FLAG_EXACT) && (path.found != 0)) {
     RETURN_ERR(DB_ERR_NOTFOUND)
   }
 
@@ -506,18 +506,30 @@ int db_get
   RETURN_OK
 }
 
-int db_del
-  (const db_t* db, const char* key)
+int db_get
+  (const db_t* db, const char* key, vec_t* value)
 {
   DEBUGFUNCTION
   ASSERT(db)
   ASSERT(key)
   ASSERT(value)
 
+  CHECK(db_get2(db, key, value, DB_FLAG_EXACT));
+
+  RETURN_OK
+}
+
+int db_del2
+  (const db_t* db, const char* key, unsigned flags)
+{
+  DEBUGFUNCTION
+  ASSERT(db)
+  ASSERT(key)
+
   struct db_path path = { 0 };
 
-  CHECK(__db_index_traverse(db, key, 0, &path));
-  if (!(path.found)) {
+  CHECK(__db_index_traverse(db, key, (flags & DB_FLAG_PARTIAL), &path));
+  if ((flags & DB_FLAG_EXACT) && (path.found != 0)) {
     RETURN_ERR(DB_ERR_NOTFOUND)
   }
 
@@ -534,15 +546,27 @@ int db_del
   RETURN_OK
 }
 
+int db_del
+  (const db_t* db, const char* key)
+{
+  DEBUGFUNCTION
+  ASSERT(db)
+  ASSERT(key)
+
+  CHECK(db_del2(db, key, DB_FLAG_EXACT));
+
+  RETURN_OK
+}
+
 int db_xcursor_move
-  (struct db_xcursor* cursor, char* key, int partial, int exact)
+  (struct db_xcursor* cursor, char* key, unsigned flags)
 {
   DEBUGFUNCTION
   ASSERT(cursor)
 
   struct db_path path = { 0 };
 
-  CHECK(__db_index_traverse(cursor->db, key, partial, &path));
+  CHECK(__db_index_traverse(cursor->db, key, flags & DB_FLAG_PARTIAL, &path));
   switch (path.found) {
   case 0:
     cursor->node_offset = path.nodes[ path.length-1 ].offset;
@@ -557,7 +581,7 @@ int db_xcursor_move
     }
     __attribute__ ((fallthrough));
   case -1:
-    if (exact) {
+    if (flags & DB_FLAG_EXACT) {
       RETURN_ERR(DB_ERR_NOTFOUND);
     } else {
       cursor->node_offset = path.nodes[ path.length-1 ].offset;

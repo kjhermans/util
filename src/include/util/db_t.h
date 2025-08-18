@@ -16,6 +16,8 @@
 #define DB_IXTUPSIZE    (DB_SIZEBITS>>DB_LOGFACTOR)
 
 #define DB_FLAG_DEL     (1<<0)
+#define DB_FLAG_PARTIAL (1<<1)
+#define DB_FLAG_EXACT   (1<<2)
 
 #define DB_ERROR        ~0
 #define DB_ERR_NOTFOUND 1
@@ -86,8 +88,16 @@ int db_get
   (const db_t* db, const char* key, vec_t* value);
 
 extern
+int db_get2
+  (const db_t* db, const char* key, vec_t* value, unsigned flags);
+
+extern
 int db_del
   (const db_t* db, const char* key);
+
+extern
+int db_del2
+  (const db_t* db, const char* key, unsigned flags);
 
 extern
 void db_debug 
@@ -115,7 +125,7 @@ int db_xcursor_init
 
 extern
 int db_xcursor_move
-  (struct db_xcursor* cursor, char* key, int partial, int exact);
+  (struct db_xcursor* cursor, char* key, unsigned flags);
 
 extern
 int db_xcursor_next
