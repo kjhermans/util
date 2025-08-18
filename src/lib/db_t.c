@@ -655,6 +655,12 @@ int db_xcursor_get
   RETURN_OK
 }
 
+int db_xcursor_del
+  (struct db_xcursor* cursor, char** key, vec_t* value)
+{
+  CHECK(db_xcursor_get(cursor, key, value));
+  cursor->tuple.flags |= DB_FLAG_DEL;
+  CHECK(__db_tuple_write(cursor->db, cursor->node.tuple_offset, &(cursor->tuple)));
 
   RETURN_OK
 }
