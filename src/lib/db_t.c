@@ -672,15 +672,26 @@ void db_debug
   devmacro_debug=0;
   while (1) {
     struct db_tuple tuple = { 0 };
+    off_t value_offset;
+    char value[ 1024 ] = { 0 };
+
     if (__db_tuple_read(db, off_db, &tuple)) { break; }
+    value_offset = off_db + (2 * sizeof(unsigned)) + tuple.keysize;
+    if (__db_read_at(db->fd, value_offset, value, sizeof(value)-1)) {
+    }
+    if (tuple.valuesize < sizeof(value)) {
+      value[ tuple.valuesize ] = 0;
+    }
     fprintf(stderr,
       "Tuple:\n"
       "- offset: %lu\n"
       "- key '%s'\n"
       "- value size %u\n"
+      "- value '%s'\n"
       , off_db
       , tuple.key
       , tuple.valuesize
+      , value
     );
     if (tuple.flags & DB_FLAG_DEL) { fprintf(stderr, "  - Deleted\n"); }
     off_db += (2 * sizeof(unsigned)) + tuple.keysize + tuple.valuesize;
