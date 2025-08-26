@@ -14,8 +14,10 @@ int __db_read_at
   (const int fd, const off_t offset, void* buf, const size_t size)
 {
   DEBUGFUNCTION
-  if (lseek(fd, offset, SEEK_SET) != offset) { RETURN_ERR(DB_ERROR) }
-  if (read(fd, buf, size) != (ssize_t)size) { RETURN_ERR(DB_ERROR) }
+  if (size) {
+    if (lseek(fd, offset, SEEK_SET) != offset) { RETURN_ERR(DB_ERROR) }
+    if (read(fd, buf, size) != (ssize_t)size) { RETURN_ERR(DB_ERROR) }
+  }
   RETURN_OK
 }
 
@@ -24,8 +26,10 @@ int __db_write_at
   (const int fd, const off_t offset, const void* buf, const size_t size)
 {
   DEBUGFUNCTION
-  if (lseek(fd, offset, SEEK_SET) != offset) { RETURN_ERR(DB_ERROR) }
-  if (write(fd, buf, size) != (ssize_t)size) { RETURN_ERR(DB_ERROR) }
+  if (size) {
+    if (lseek(fd, offset, SEEK_SET) != offset) { RETURN_ERR(DB_ERROR) }
+    if (write(fd, buf, size) != (ssize_t)size) { RETURN_ERR(DB_ERROR) }
+  }
   RETURN_OK
 }
 
@@ -91,28 +95,28 @@ int __db_tuple_write
 
 static
 int __db_ixnode_read
-  (const db_t* db, const off_t offset, struct db_path_node* node)
+  (const db_t* db, const off_t offset, struct db_index_node* node)
 {
   DEBUGFUNCTION
   ASSERT(db)
   ASSERT(node)
-  ASSERT((offset % sizeof(struct db_path_node)) == 0)
+  ASSERT((offset % sizeof(struct db_index_node)) == 0)
 
-  CHECK(__db_read_at(db->ix, offset, node, sizeof(struct db_path_node)));
+  CHECK(__db_read_at(db->ix, offset, node, sizeof(struct db_index_node)));
 
   RETURN_OK
 }
 
 static
 int __db_ixnode_write
-  (const db_t* db, const off_t offset, const struct db_path_node* node)
+  (const db_t* db, const off_t offset, const struct db_index_node* node)
 {
   DEBUGFUNCTION
   ASSERT(db)
   ASSERT(node)
-  ASSERT((offset % sizeof(struct db_path_node)) == 0)
+  ASSERT((offset % sizeof(struct db_index_node)) == 0)
 
-  CHECK(__db_write_at(db->ix, offset, node, sizeof(struct db_path_node)));
+  CHECK(__db_write_at(db->ix, offset, node, sizeof(struct db_index_node)));
 
   RETURN_OK
 }
@@ -138,45 +142,205 @@ int __db_compare
   return 0;
 }
 
-/*
+#ifdef _DEBUG
 static
 void __db_path_debug
   (struct db_path* path)
 {
-  fprintf(stderr, "PATH (length %u, found %d):\n", path->length, path->found);
+  fprintf(stderr,
+    "PATH (at %p, length %u, searchlevel %u, found %d, head %p):\n"
+    , path, path->length, path->search_level, path->found, path->head
+  );
   for (unsigned i=0; i < path->length; i++) {
     fprintf(stderr,
       "Path elt %u:\n"
       "- Offset: %lu\n"
-      "- Tuple: %u\n"
-      "- Level: %u\n"
+      "- Tuple_offset: %u\n"
+      "- Node level: %u\n"
+      "- Tuple key: %s\n"
+      "- Tuple value size: %u\n"
       , i
-      , path->offsets[ i ]
-      , path->nodes[ i ].tuple_offset
-      , path->nodes[ i ].level
+      , path->elts[ i ].node_offset
+      , path->elts[ i ].node.tuple_offset
+      , path->elts[ i ].node.level
+      , path->elts[ i ].tuple.key
+      , path->elts[ i ].tuple.valuesize
     );
-    for (unsigned j=0; j < path->nodes[ i ].level; j++) {
-      fprintf(stderr, "- Next (%u): %u\n", j, path->nodes[ i ].next[ j ]);
+    for (unsigned j=0; j < path->elts[ i ].node.level; j++) {
+      fprintf(stderr, "- Next (%u): %u\n", j, path->elts[ i ].node.next[ j ]);
     }
   }
   fprintf(stderr, "/PATH\n");
 }
-*/
+#endif
+
+static
+int __db_index_traverse_initialize
+  (const db_t* db, struct db_path* path)
+{
+  DEBUGFUNCTION
+  ASSERT(db)
+  ASSERT(path)
+
+  off_t next = 0;
+
+  memset(path, 0, sizeof(*path));
+  CHECK(__db_ixnode_read(db, 0, &(path->elts[ 0 ].node)));
+  ++(path->length); /* Head node loaded. */
+
+  path->search_level = path->elts[ 0 ].node.level-1;
+  for (unsigned i=path->elts[ 0 ].node.level; i > 0; i--) {
+    if ((next = path->elts[ 0 ].node.next[ i-1 ]) != 0) {
+      break;
+    } else {
+      path->search_level = i-1;
+    }
+  }
+
+  if (next) {
+    path->elts[ 1 ].node_offset = next;
+    CHECK(__db_ixnode_read(db, next, &(path->elts[ 1 ].node)));
+    CHECK(
+      __db_tuple_read(
+        db, path->elts[ 1 ].node.tuple_offset, &(path->elts[ 1 ].tuple)
+      )
+    );
+    ++(path->length);
+  }
+
+  path->head = &(path->elts[ path->length-1 ]);
+
+  RETURN_OK
+}
+
+static
+int __db_index_traverse_back
+  (struct db_path* path)
+{
+  DEBUGFUNCTION
+  ASSERT(path)
+
+  if (path->length < 2) { RETURN_ERR(DB_ERR_UNSTABLE); }
+  --(path->length);
+  path->head = &(path->elts[ path->length-1 ]);
+  if (path->search_level) {
+    --(path->search_level);
+  } else {
+    path->found = 1;
+    path->ends = 1;
+  }
+
+  RETURN_OK
+}
+
+static
+int __db_index_traverse_step
+  (struct db_path* path)
+{
+  DEBUGFUNCTION
+  ASSERT(path)
+
+  for (unsigned i=path->search_level+1; i > 0; i--) {
+    if (path->head->node.next[ i-1 ] != 0) { break; }
+    path->search_level = i-1;
+  }
+
+  RETURN_OK
+}
+
+static
+int __db_index_traverse_cleanup
+  (struct db_path* path)
+{
+  unsigned l;
+
+  if ((l = path->length) > 2) {
+    if (path->elts[ l-1 ].node.level == path->elts[ l-2 ].node.level) {
+      path->elts[ l-2 ] = path->elts[ l-1 ];
+      --(path->length);
+    }
+  }
+
+  RETURN_OK
+}
+
+static
+int __db_index_traverse_next
+  (const db_t* db, struct db_path* path)
+{
+  DEBUGFUNCTION
+  ASSERT(db)
+  ASSERT(path)
+
+  off_t next = path->head->node.next[ path->search_level ];
+
+  if (next == 0) {
+    path->ends = 1;
+  } else {
+    ++(path->length);
+    path->head = &(path->elts[ path->length-1 ]);
+    path->head->node_offset = next;
+    CHECK(__db_ixnode_read(db, path->head->node_offset, &(path->head->node)));
+    CHECK(
+      __db_tuple_read(db, path->head->node.tuple_offset, &(path->head->tuple))
+    );
+    CHECK(__db_index_traverse_cleanup(path));
+  }
+
+  RETURN_OK
+}
+
+static
+int __db_index_traverse_testloop
+  (const db_t* db, const char* key, const int partial, struct db_path* path)
+{
+  DEBUGFUNCTION
+  ASSERT(db)
+  ASSERT(key)
+  ASSERT(path)
+
+  while (!(path->ends)) {
+    char* testkey = path->head->tuple.key;
+
+#ifdef _DEBUG
+__db_path_debug(path);
+#endif
+
+    switch (path->found = __db_compare(key, testkey, partial)) {
+    case 0:
+      RETURN_OK
+    case -1:
+      CHECK(__db_index_traverse_back(path));
+      break;
+    case 1:
+      CHECK(__db_index_traverse_step(path));
+      break;
+    }
+    CHECK(__db_index_traverse_next(db, path));
+  }
+
+  RETURN_OK
+}
 
 /**
  * Traverses the index to the (tuple with closest proximity to the) key,
  * leaving the path used to do that traversal to the caller.
  *
- * \param db     [IN]  Database.
- * \param key    [IN]  Key to find (C string, zero terminated).
- * \param path  [OUT]  Path used to locate the key, or its closest proximity.
+ * Check the value of path->found for how to proceed with the result:
+ * - If it is zero, then the search key has been found exactly
+ *   (even if partially).
+ * - If it is one, then the path is positioned at a node just before
+ *   the required place in the database.
  *
- * \returns            Zero on success, non zero on error.
- *                     Note that 'key not found' is not an error: check
- *                     path->found value being non zero for this condition.
+ * \param db       [IN]  Database.
+ * \param key      [IN]  Search key (C string, zero terminated).
+ * \param partial  [IN]  Allow for partial matches (database key is equal to,
+ *                       but bigger than search key).
+ * \param path    [OUT]  Path used to locate the key, or its closest proximity.
  *
- * Note that it is a rather large function. I'm not a fan of these.
- * I must probably clean this up.
+ * \returns              Zero on success, non zero on error.
+ *                       Note that 'key not found' is not an error: check
+ *                       path->found value being non zero for this condition.
  */
 static
 int __db_index_traverse
@@ -187,63 +351,13 @@ int __db_index_traverse
   ASSERT(key)
   ASSERT(path)
 
-  /* Initial phase, setting up the path structure. */
-  memset(path, 0, sizeof(*path));
-  CHECK(__db_ixnode_read(db, 0, &(path->nodes[ 0 ].node)));
-  ++(path->length); /* Head node loaded. */
-
-  /* Iteration phase. */
-  while (1) {
-
-    struct db_path_node* node = &(path->nodes[ path->length-1 ].node);
-    struct db_path_node* nextnode = &(path->nodes[ path->length ].node);
-    unsigned top = node->level;
-
-    /* Descend into current node, skipping all zero next pointers. */
-    while (top) {
-      if (node->next[ top-1 ]) { break; }
-      --top;
-    }
-    if (0 == top) { /* Last node reached. */
-      path->found = 1;
-      RETURN_OK
-    }
-
-    /* Try next */
-TRYAGAIN:
-    {
-      path->nodes[ path->length ].offset = node->next[ top-1 ];
-      CHECK(
-        __db_ixnode_read(
-          db,
-          path->nodes[ path->length ].offset,
-          &(path->nodes[ path->length ].node)
-        )
-      );
-      CHECK(__db_tuple_read(db, nextnode->tuple_offset, &(path->nodes[ path->length ].tuple)));
-      path->found = __db_compare(key, path->nodes[ path->length ].tuple.key, partial);
-    }
-
-    /* Compare */
-    switch (path->found) {
-    case -1:
-      --top;
-      if (top == 0) { ++(path->length); RETURN_OK }
-      goto TRYAGAIN;
-
-    case 1: /* overshoot */
-      if (nextnode->level == node->level) {
-        path->nodes[ path->length-1 ].offset = path->nodes[ path->length ].offset;
-        path->nodes[ path->length-1 ].node = path->nodes[ path->length ].node;
-      } else { /* nextnode level must be smaller */
-        ++(path->length);
-      }
-      break;
-
-    case 0:
-      RETURN_OK
-    }
+  CHECK(__db_index_traverse_initialize(db, path));
+  if (path->length == 1) {
+    path->found = 1;
+    RETURN_OK
   }
+  CHECK(__db_index_traverse_testloop(db, key, partial, path));
+
   RETURN_OK
 }
 
@@ -276,12 +390,15 @@ int __db_index_tuple
   struct db_path path = { 0 };
 
   CHECK(__db_index_traverse(db, tuple->key, 0, &path));
+#ifdef _DEBUG
+  __db_path_debug(&path);
+#endif
 
   switch (path.found) {
   case 0: /* found exact match; replace tuple */
     {
-      off_t node_offset = path.nodes[ path.length-1 ].offset;
-      struct db_path_node* node = &(path.nodes[ path.length-1 ].node);
+      off_t node_offset = path.elts[ path.length-1 ].node_offset;
+      struct db_index_node* node = &(path.elts[ path.length-1 ].node);
       node->tuple_offset = tuple_offset;
       CHECK(__db_ixnode_write(db, node_offset, node));
     }
@@ -295,14 +412,14 @@ int __db_index_tuple
     {
       off_t node_offset;
       unsigned n = 0;
-      struct db_path_node node = {
+      struct db_index_node node = {
         .tuple_offset = tuple_offset,
         .level = __db_random(DB_IXTUPSIZE-1),
         .next = { 0 }
       };
 
       for (unsigned i=path.length; i; i--) {
-        struct db_path_node* prevnode = &(path.nodes[ i-1 ].node);
+        struct db_index_node* prevnode = &(path.elts[ i-1 ].node);
         if (n >= node.level) { break; }
         while (n < prevnode->level) {
           node.next[ n ] = prevnode->next[ n ];
@@ -314,8 +431,8 @@ int __db_index_tuple
 
       n = 0;
       for (unsigned i=path.length; i; i--) {
-        off_t prevoffset = path.nodes[ i-1 ].offset;
-        struct db_path_node* prevnode = &(path.nodes[ i-1 ].node);
+        off_t prevoffset = path.elts[ i-1 ].node_offset;
+        struct db_index_node* prevnode = &(path.elts[ i-1 ].node);
         if (n >= node.level) { break; }
         while (n < prevnode->level) {
           prevnode->next[ n ] = node_offset;
@@ -337,7 +454,7 @@ int __db_reindex
   ASSERT(db)
 
   off_t off_db = 0;
-  struct db_path_node node0 = {
+  struct db_index_node node0 = {
     .tuple_offset = 0,
     .level = DB_IXTUPSIZE,
     .next = { 0 }
@@ -479,7 +596,7 @@ int db_put
 }
 
 int db_get2
-  (const db_t* db, const char* key, vec_t* value, unsigned flags)
+  (const db_t* db, const char* key, vec_t* value, const unsigned flags)
 {
   DEBUGFUNCTION
   ASSERT(db)
@@ -488,20 +605,33 @@ int db_get2
 
   struct db_path path = { 0 };
   off_t value_offset;
+  unsigned value_size;
 
   CHECK(__db_index_traverse(db, key, (flags & DB_FLAG_PARTIAL), &path));
+#ifdef _DEBUG
+  __db_path_debug(&path);
+#endif
   if ((flags & DB_FLAG_EXACT) && (path.found != 0)) {
     RETURN_ERR(DB_ERR_NOTFOUND)
   }
 
   value_offset =
-    path.nodes[ path.length-1 ].node.tuple_offset +
+    path.elts[ path.length-1 ].node.tuple_offset +
     (2 * sizeof(unsigned)) +
-    path.nodes[ path.length-1 ].tuple.keysize;
+    path.elts[ path.length-1 ].tuple.keysize;
+  value_size = path.elts[ path.length-1 ].tuple.valuesize;
+fprintf(stderr, "VALUE SIZE IS %u\n", value_size);
 
-  value->size = path.nodes[ path.length-1 ].tuple.valuesize;
-  value->data = calloc(value->size + 1, 1);
+  if (value->size == 0 && value->data == 0) {
+    value->size = value_size;
+    value->data = calloc(value->size + 1, 1);
+  } else if (value->size > value_size) {
+    value->size = value_size;
+fprintf(stderr, "Forcing to %u\n", value->size);
+  }
   CHECK(__db_read_at(db->fd, value_offset, value->data, value->size));
+fprintf(stderr, "db_get2 (%u):\n", value->size);
+logmem(value->data, value->size);
 
   RETURN_OK
 }
@@ -520,7 +650,7 @@ int db_get
 }
 
 int db_del2
-  (const db_t* db, const char* key, unsigned flags)
+  (const db_t* db, const char* key, const unsigned flags)
 {
   DEBUGFUNCTION
   ASSERT(db)
@@ -533,13 +663,13 @@ int db_del2
     RETURN_ERR(DB_ERR_NOTFOUND)
   }
 
-  path.nodes[ path.length-1 ].tuple.flags |= DB_FLAG_DEL;
+  path.elts[ path.length-1 ].tuple.flags |= DB_FLAG_DEL;
 
   CHECK(
     __db_tuple_write(
       db,
-      path.nodes[ path.length-1 ].node.tuple_offset,
-      &(path.nodes[ path.length-1 ].tuple)
+      path.elts[ path.length-1 ].node.tuple_offset,
+      &(path.elts[ path.length-1 ].tuple)
     )
   );
 
@@ -559,7 +689,7 @@ int db_del
 }
 
 int db_xcursor_move
-  (struct db_xcursor* cursor, char* key, unsigned flags)
+  (struct db_xcursor* cursor, char* key, const unsigned flags)
 {
   DEBUGFUNCTION
   ASSERT(cursor)
@@ -569,9 +699,9 @@ int db_xcursor_move
   CHECK(__db_index_traverse(cursor->db, key, flags & DB_FLAG_PARTIAL, &path));
   switch (path.found) {
   case 0:
-    cursor->node_offset = path.nodes[ path.length-1 ].offset;
-    cursor->node = path.nodes[ path.length-1 ].node;
-    cursor->tuple = path.nodes[ path.length-1 ].tuple;
+    cursor->node_offset = path.elts[ path.length-1 ].node_offset;
+    cursor->node = path.elts[ path.length-1 ].node;
+    cursor->tuple = path.elts[ path.length-1 ].tuple;
     break;
   case 1:
     if (path.length == 1) {
@@ -584,9 +714,9 @@ int db_xcursor_move
     if (flags & DB_FLAG_EXACT) {
       RETURN_ERR(DB_ERR_NOTFOUND);
     } else {
-      cursor->node_offset = path.nodes[ path.length-1 ].offset;
-      cursor->node = path.nodes[ path.length-1 ].node;
-      cursor->tuple = path.nodes[ path.length-1 ].tuple;
+      cursor->node_offset = path.elts[ path.length-1 ].node_offset;
+      cursor->node = path.elts[ path.length-1 ].node;
+      cursor->tuple = path.elts[ path.length-1 ].tuple;
     }
     break;
   }
@@ -698,7 +828,7 @@ void db_debug
   }
   off_t off_ix = lseek(db->ix, 0, SEEK_SET);
   while (1) {
-    struct db_path_node node = { 0 };
+    struct db_index_node node = { 0 };
     if (__db_ixnode_read(db, off_ix, &node)) { break; }
     fprintf(stderr,
       "Index node:\n"

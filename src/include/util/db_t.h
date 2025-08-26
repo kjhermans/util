@@ -22,6 +22,7 @@
 #define DB_ERROR        ~0
 #define DB_ERR_NOTFOUND 1
 #define DB_ERR_EOF      2
+#define DB_ERR_UNSTABLE 3
 
 typedef struct
 {
@@ -38,22 +39,28 @@ struct db_tuple
   unsigned              valuesize;
 };
 
-struct db_path_node
+struct db_index_node
 {
   unsigned              tuple_offset;
   unsigned              level;
   unsigned              next[ DB_IXTUPSIZE ];
 };
 
+struct db_path_elt
+{
+  off_t                 node_offset;
+  struct db_index_node  node;
+  struct db_tuple       tuple;
+};
+
 struct db_path
 {
-  struct {
-    off_t                 offset;
-    struct db_path_node   node;
-    struct db_tuple       tuple;
-  }                     nodes[ DB_IXTUPSIZE ];
+  struct db_path_elt    elts[ DB_IXTUPSIZE ];
+  struct db_path_elt*   head;
   unsigned              length;
+  unsigned              search_level;
   int                   found;
+  int                   ends;
 };
 
 struct db_cursor
@@ -67,7 +74,7 @@ struct db_xcursor
 {
   const db_t*           db;
   off_t                 node_offset;
-  struct db_path_node   node;
+  struct db_index_node  node;
   struct db_tuple       tuple;
 };
 
