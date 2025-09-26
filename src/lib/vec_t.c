@@ -90,7 +90,9 @@ void vec_append
   (vec_t* out, void* mem, unsigned size)
 {
   out->data = realloc(out->data, out->size + size + 1);
-  memcpy(out->data + out->size, mem, size);
+  if (mem) {
+    memcpy(out->data + out->size, mem, size);
+  }
   out->size += size;
   ((char*)(out->data))[ out->size ] = 0;
 }
