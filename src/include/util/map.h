@@ -12,6 +12,14 @@
 #define MAP_EQUALS(a,b) (a == b)
 #endif
 
+#ifndef MAP_FREE_KEY
+#define MAP_FREE_KEY(it)
+#endif
+
+#ifndef MAP_FREE_VALUE
+#define MAP_FREE_VALUE(it)
+#endif
+
 /* if you define MAP_COPY_KEY(a,b) or MAP_COPY_VALUE(a,b) */
 
 #define COMBINE(a, b) a##b
@@ -69,7 +77,13 @@
   }                                                                         \
                                                                             \
   void COMBINE(prefix, free)(COMBINE(prefix, t)* map) {                     \
+    for (unsigned i=0; i < map->count; i++) {                               \
+      MAP_FREE_KEY(map->keys[i]);                                           \
+    }                                                                       \
     if (map->keys) { free(map->keys); }                                     \
+    for (unsigned i=0; i < map->count; i++) {                               \
+      MAP_FREE_VALUE(map->values[i]);                                       \
+    }                                                                       \
     if (map->values) { free(map->values); }                                 \
     memset(map, 0, sizeof(*map));                                           \
   }                                                                         \
@@ -146,8 +160,11 @@
   int COMBINE(prefix, del)(COMBINE(prefix, t)* map, Tk key, Tv* val) {      \
     for (unsigned i=0; i < map->count; i++) {                               \
       if (MAP_EQUALS(map->keys[ i ], key)) {                                \
+        MAP_FREE_KEY(map->keys[ i ]);                                       \
         if (val) {                                                          \
           *val = map->values[ i ];                                          \
+        } else {                                                            \
+          MAP_FREE_VALUE(map->values[ i ]);                                 \
         }                                                                   \
         memmove(                                                            \
           &(map->keys[ i ]),                                                \

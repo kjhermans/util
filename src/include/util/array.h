@@ -271,6 +271,7 @@
   int COMBINE(prefix, rem)(COMBINE(prefix, t)* list, unsigned index, T* elt) {\
     if (index < list->count) {                                      \
       if (elt) { *elt = list->list[ index ]; }                      \
+      else { ARRAY_FREE_ITEM(list->list[ index ]); }                \
       memmove(                                                      \
         &(list->list[ index ]),                                     \
         &(list->list[ index + 1]),                                  \
