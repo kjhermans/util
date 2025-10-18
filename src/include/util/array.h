@@ -128,6 +128,9 @@
   void COMBINE(prefix, free)(COMBINE(prefix, t)* list);             \
                                                                     \
   extern                                                            \
+  void COMBINE(prefix, clear)(COMBINE(prefix, t)* list);            \
+                                                                    \
+  extern                                                            \
   void COMBINE(prefix, print)(COMBINE(prefix, t)* list);            \
                                                                     \
   extern                                                            \
@@ -158,6 +161,11 @@
     for (unsigned i=0; i < list->count; i++) {                      \
       ARRAY_FREE_ITEM(list->list[i]);                               \
     }                                                               \
+    if (list->list) { free(list->list); }                           \
+    memset(list, 0, sizeof(*list));                                 \
+  }                                                                 \
+                                                                    \
+  void COMBINE(prefix, clear)(COMBINE(prefix, t)* list) {           \
     if (list->list) { free(list->list); }                           \
     memset(list, 0, sizeof(*list));                                 \
   }                                                                 \
