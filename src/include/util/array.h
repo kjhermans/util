@@ -83,7 +83,7 @@
   void COMBINE(prefix, init)(COMBINE(prefix, t)* list);             \
                                                                     \
   extern                                                            \
-  COMBINE(prefix, t) COMBINE(prefix, INIT)();                       \
+  COMBINE(prefix, t) COMBINE(prefix, INIT)(void);                   \
                                                                     \
   extern                                                            \
   T* COMBINE(prefix, push)(COMBINE(prefix, t)* list, T elt);        \
@@ -152,7 +152,7 @@
     memset(list, 0, sizeof(*list));                                 \
   }                                                                 \
                                                                     \
-  COMBINE(prefix, t) COMBINE(prefix, INIT)() {                      \
+  COMBINE(prefix, t) COMBINE(prefix, INIT)(void) {                  \
     COMBINE(prefix, t) result = { 0, 0, 0 };                        \
     return result;                                                  \
   }                                                                 \
