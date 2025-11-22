@@ -275,6 +275,19 @@ int vec_compare
   return 0;
 }
 
+int vec_endswith
+  (vec_t* vec, char* str)
+{
+  unsigned l;
+
+  if (str && ((l = strlen(str)) <= vec->size) && l) {
+    if (0 == memcmp(vec->data + vec->size - l, str, l)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 static
 unsigned hexdecode
   (char c)

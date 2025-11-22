@@ -262,6 +262,12 @@ int vec_compare
 
 /* declared in ./vec_t.c */
 extern
+int vec_endswith
+  (vec_t* vec, char* str)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./vec_t.c */
+extern
 int vec_hex_decode
   (vec_t* vec)
   __attribute__ ((warn_unused_result));
