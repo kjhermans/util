@@ -114,7 +114,9 @@ void vec_appendc
 void vec_appendstr
   (vec_t* out, char* str)
 {
-  vec_append(out, str, strlen(str));
+  if (str) {
+    vec_append(out, str, strlen(str));
+  }
 }
 
 void vec_prepend
