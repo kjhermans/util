@@ -26,5 +26,5 @@ archive: clean
 install: all
 	cp -rf src/include/util /usr/local/include
 	cp -rf src/lib/libutil.a /usr/local/lib
-	cd /usr/local/lib && ln -s libutil.a libandy.a
-	cd /usr/local/include && ln -s util andy
+	cd /usr/local/lib && ln -f -s libutil.a libandy.a
+	cd /usr/local/include && ln -f -s util andy
