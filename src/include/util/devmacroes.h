@@ -22,6 +22,12 @@ int devmacro_debug=1;
 #define DBGMSG(...)
 #endif
 
+#define TODO(...) { \
+  fprintf(stderr, "In %s (%s:%d) TODO: ", \
+    __PRETTY_FUNCTION__, __FILE__, __LINE__); \
+  fprintf(stderr, __VA_ARGS__); \
+}
+
 #ifdef _DEBUG
 #define ASSERT(cnd) { if (!(cnd)) { DBGMSG("Assertion failed in %s:%d\n", __FILE__, __LINE__); abort(); } }
 #else
