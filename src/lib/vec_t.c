@@ -37,10 +37,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <stdint.h>
 
-#include <vec_t.h>
+#include <util/vec_t.h>
 
 void vec_printf
-  (vec_t* out, char* fmt, ...)
+  (vec_t* out, const char* fmt, ...)
 {
   va_list ap;
   int size;
@@ -60,7 +60,7 @@ void vec_printf
 }
 
 void vec_printf_insert
-  (vec_t* out, int offset, char* fmt, ...)
+  (vec_t* out, int offset, const char* fmt, ...)
 {
   va_list ap;
   int size;

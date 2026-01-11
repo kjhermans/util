@@ -42,10 +42,10 @@ typedef struct
 vec_t;
 
 void vec_printf
-  (vec_t* out, char* fmt, ...);
+  (vec_t* out, const char* fmt, ...);
 
 void vec_printf_insert
-  (vec_t* out, int offset, char* fmt, ...);
+  (vec_t* out, int offset, const char* fmt, ...);
 
 void vec_append
   (vec_t* out, void* mem, unsigned size);

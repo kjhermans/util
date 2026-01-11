@@ -34,8 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _VEC_LIST_H_
 #define _VEC_LIST_H_
 
-#include <vec_t.h>
-#include <array.h>
+#include <util/vec_t.h>
+#include <util/array.h>
 MAKE_ARRAY_HEADER(vec_t, vec_list_)
 
 #endif
