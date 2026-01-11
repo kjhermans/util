@@ -98,6 +98,12 @@ extern
 void logmem
   (const void* mem, unsigned size);
 
+/* declared in ./hexcodon.c */
+extern
+unsigned hexcodon
+  (uint8_t high, uint8_t low)
+  __attribute__ ((warn_unused_result));
+
 /* declared in ./ipv4_parse.c */
 extern
 int ipv4_parse
@@ -186,12 +192,12 @@ int strxypos
 /* declared in ./vec_t.c */
 extern
 void vec_printf
-  (vec_t* out, char* fmt, ...);
+  (vec_t* out, const char* fmt, ...);
 
 /* declared in ./vec_t.c */
 extern
 void vec_printf_insert
-  (vec_t* out, int offset, char* fmt, ...);
+  (vec_t* out, int offset, const char* fmt, ...);
 
 /* declared in ./vec_t.c */
 extern
