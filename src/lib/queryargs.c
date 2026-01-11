@@ -154,3 +154,14 @@ int queryargs_as_int
   }
   return 0;
 }
+
+char* nextarg
+  (unsigned argc, char* argv[], char* arg)
+{
+  for (unsigned i=0; i < argc-1; i++) {
+    if (argv[ i ] == arg) {
+      return argv[ i + 1 ];
+    }
+  }
+  return NULL;
+}

@@ -153,6 +153,12 @@ int queryargs_as_int
   )
   __attribute__ ((warn_unused_result));
 
+/* declared in ./queryargs.c */
+extern
+char* nextarg
+  (unsigned argc, char* argv[], char* arg)
+  __attribute__ ((warn_unused_result));
+
 /* declared in ./srv_clientsocket_udp.c */
 extern
 int srv_clientsocket_udp
