@@ -189,6 +189,12 @@ int strxypos
   (char* string, unsigned pos, unsigned vector[ 2 ])
   __attribute__ ((warn_unused_result));
 
+/* declared in ./uint_map_t.c */
+extern
+unsigned uint_map_reverse_lookup
+  (uint_map_t* map, unsigned n)
+  __attribute__ ((warn_unused_result));
+
 /* declared in ./vec_t.c */
 extern
 void vec_printf
