@@ -56,6 +56,9 @@ void vec_appendchr
 void vec_appendstr
   (vec_t* out, char* str);
 
+void vec_appendv
+  (vec_t* out, vec_t* app);
+
 void vec_prepend
   (vec_t* out, void* mem, unsigned size);
 

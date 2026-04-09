@@ -119,6 +119,12 @@ void vec_appendstr
   }
 }
 
+void vec_appendv
+  (vec_t* out, vec_t* app)
+{
+  vec_append(out, app->data, app->size);
+}
+
 void vec_prepend
   (vec_t* out, void* mem, unsigned size)
 {
