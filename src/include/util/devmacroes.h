@@ -70,4 +70,10 @@ int devmacro_debug=1;
 #define RETURN_ERR(_cod) { return _cod; }
 #endif
 
+#ifdef _DEBUG
+#define RETURN_ERR2(_cod, _alt) { int __r = _cod; DBGMSG("Function %s returns %d.\n", __PRETTY_FUNCTION__, _cod); (_alt); return _cod; }
+#else
+#define RETURN_ERR2(_cod, _alt) { int __r = _cod; (_alt); return _cod; }
+#endif
+
 #endif
