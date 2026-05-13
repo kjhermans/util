@@ -19,7 +19,9 @@ fnchdr: ../include/util/util_functions.h
 	  -x ./table_t.c \
 	  -x ./db_t.c \
 	  -x ./xtransport.c \
-		-x ./uint_map_t.c \
+	  -x ./uint_map_t.c \
+	  -x ./str2int_map.c \
+	  -x ./str2str_map.c \
 	    > ../include/util/util_functions.h
 
 $(TARGET): $(OBJECTS)
