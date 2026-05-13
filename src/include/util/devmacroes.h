@@ -35,12 +35,6 @@ int devmacro_debug=1;
 #endif
 
 #ifdef _DEBUG
-#define RETURN_ERR(cod) { DBGMSG("Function %s return error code %d.\n", __PRETTY_FUNCTION__, cod); return (cod); }
-#else
-#define RETURN_ERR(cod) { return (cod); }
-#endif
-  
-#ifdef _DEBUG
 #define CHECK(fnc) { int __r = (fnc); if (__r) { DBGMSG("Error %d in %s:%d\n", __r, __FILE__, __LINE__); RETURN_ERR(__r) } }
 #else
 #define CHECK(fnc) { int __r = (fnc); if (__r) { return __r; } }
