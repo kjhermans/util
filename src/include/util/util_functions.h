@@ -177,10 +177,10 @@ int srv_serversocket_udp
   (uint32_t ip, uint16_t port)
   __attribute__ ((warn_unused_result));
 
-/* declared in ./str2int_map.c */
+/* declared in ./str2str_map.c */
 extern
-char* str2int_map_reverse_lookup
-  (str2int_map_t* map, unsigned n)
+char* str2str_map_reverse_lookup
+  (str2str_map_t* map, char* n)
   __attribute__ ((warn_unused_result));
 
 /* declared in ./strxypos.c */
@@ -275,6 +275,12 @@ void vec_reduce
 extern
 int vec_compare
   (vec_t* v1, vec_t* v2)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./vec_t.c */
+extern
+int vec_strcmp
+  (vec_t* v, char* str)
   __attribute__ ((warn_unused_result));
 
 /* declared in ./vec_t.c */
