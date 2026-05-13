@@ -116,6 +116,11 @@ char* ipv4_tostring
   (uint32_t address)
   __attribute__ ((warn_unused_result));
 
+/* declared in ./memdup.c */
+extern
+void* memdup
+  (const void* mem, unsigned size);
+
 /* declared in ./queryargs.c */
 extern
 int queryargs
