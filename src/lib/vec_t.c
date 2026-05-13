@@ -283,6 +283,13 @@ int vec_compare
   return 0;
 }
 
+int vec_strcmp
+  (vec_t* v, char* str)
+{
+  vec_t v2 = { (unsigned char*)str, strlen(str) };
+  return vec_compare(v, &v2);
+}
+
 int vec_endswith
   (vec_t* vec, char* str)
 {
