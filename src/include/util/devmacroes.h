@@ -9,6 +9,15 @@ int devmacro_debug=1;
 #include <time.h>
 #endif
 
+#define LOGMSG(...) { \
+  char tim[ 64 ]; \
+  time_t t = time(0); \
+  struct tm* tm = localtime(&t); \
+  strftime(tim, sizeof(tim), "%a, %d %b %Y %T %z", tm); \
+  fprintf(stderr, "%s: DEBUG: %s: %d: ", tim, __FILE__, __LINE__); \
+  fprintf(stderr, __VA_ARGS__); \
+}
+
 #ifdef _DEBUG
 #define DBGMSG(...) if (devmacro_debug) { \
   char tim[ 64 ]; \

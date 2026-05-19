@@ -116,6 +116,11 @@ char* ipv4_tostring
   (uint32_t address)
   __attribute__ ((warn_unused_result));
 
+/* declared in ./logmsg.c */
+extern
+void logmsg
+  (unsigned severity, char* fmt, ...);
+
 /* declared in ./memdup.c */
 extern
 void* memdup
@@ -180,12 +185,6 @@ int srv_clientsocket_udp
 extern
 int srv_serversocket_udp
   (uint32_t ip, uint16_t port)
-  __attribute__ ((warn_unused_result));
-
-/* declared in ./str2str_map.c */
-extern
-char* str2str_map_reverse_lookup
-  (str2str_map_t* map, char* n)
   __attribute__ ((warn_unused_result));
 
 /* declared in ./strxypos.c */
