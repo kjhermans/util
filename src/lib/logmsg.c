@@ -41,8 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/socket.h>
 #include <netinet/ip.h>
 
-#include <andy/vec_t.h>
-#include <andy/util_functions.h>
+#include "../include/util/vec_t.h"
+#include "../include/util/util_functions.h"
 
 static pid_t pid = 0;
 static uint64_t count = 0;

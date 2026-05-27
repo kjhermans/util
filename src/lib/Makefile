@@ -15,9 +15,6 @@ fnchdr: ../include/util/util_functions.h
 ../include/util/util_functions.h: $(CFILES)
 	../../bin/genfnchdr \
 	  -i UTIL \
-	  -A '#include <btree/td.h>' \
-	  -x ./table_t.c \
-	  -x ./db_t.c \
 	  -x ./xtransport.c \
 	  -x ./uint_map_t.c \
 	  -x ./str2int_map.c \
