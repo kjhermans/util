@@ -71,6 +71,9 @@ void vec_reserve
 void vec_copy
   (vec_t* out, vec_t* in);
 
+vec_t vec_copy_
+  (vec_t in);
+
 void vec_shift
   (vec_t* out, unsigned offset, unsigned whereto, int size);
 

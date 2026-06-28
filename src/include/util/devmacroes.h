@@ -1,8 +1,10 @@
 #ifndef _DEVMACROES_H_
 #define _DEVMACROES_H_
 
+#ifdef _DEBUG
 static
-int devmacro_debug=1;
+int devmacro_debug __attribute__((unused)) = 1;
+#endif
 
 #ifdef _DEBUG
 #include <stdio.h>

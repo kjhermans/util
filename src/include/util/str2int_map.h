@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _GPEGA_GEN4_STR2INT_MAP_H_
 #define _GPEGA_GEN4_STR2INT_MAP_H_
 
-#include <util/map.h>
+#include "map.h"
 
 MAKE_MAP_HEADER(char*, unsigned, str2int_map_)
 

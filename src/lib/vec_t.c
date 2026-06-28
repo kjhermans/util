@@ -183,6 +183,15 @@ void vec_copy
   out->size = in->size;
 }
 
+vec_t vec_copy_
+  (vec_t in)
+{
+  vec_t out = { 0 };
+
+  vec_copy(&out, &in);
+  return out;
+}
+
 void vec_shift
   (vec_t* out, unsigned offset, unsigned whereto, int size)
 {
