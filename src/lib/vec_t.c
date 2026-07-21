@@ -238,6 +238,20 @@ void vec_delete
   vec->data[ vec->size ] = 0;
 }
 
+void vec_setat
+  (vec_t* out, unsigned offset, void* mem, unsigned size)
+{
+  if (offset > out->size) {
+    vec_append(out, NULL, offset - out->size);
+    vec_append(out, mem, size);
+  } else if (offset + size > out->size) {
+    out->size = offset;
+    vec_append(out, mem, size);
+  } else {
+    memcpy(out->data, mem, size);
+  }
+}
+
 int vec_find_at
   (vec_t* vec, unsigned offset, const void* mem, unsigned size)
 {

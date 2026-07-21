@@ -65,6 +65,9 @@ void vec_prepend
 void vec_insert
   (vec_t* out, int offset, void* mem, unsigned size);
 
+void vec_setat
+  (vec_t* out, unsigned offset, void* mem, unsigned size);
+
 void vec_reserve
   (vec_t* out, int offset, unsigned size);
 
