@@ -244,7 +244,7 @@ void vec_setat
   if (offset > out->size) {
     vec_append(out, NULL, offset - out->size);
     vec_append(out, mem, size);
-  } else if (offset + size > out->size) {
+  } else if (offset + size >= out->size) {
     out->size = offset;
     vec_append(out, mem, size);
   } else {
