@@ -19,6 +19,8 @@ fnchdr: ../include/util/util_functions.h
 	  -x ./uint_map_t.c \
 	  -x ./str2int_map.c \
 	  -x ./str2str_map.c \
+		-x ./vec_t.c \
+		-x ./vec_list.c \
 	    > ../include/util/util_functions.h
 
 $(TARGET): $(OBJECTS)
