@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -8,6 +9,7 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 
 int srv_serversocket_tcp
@@ -22,7 +24,23 @@ int srv_serversocket_tcp
 
   if (fd < 0) {
     fprintf(stderr, "Could not create socket.\n");
-  } else if (bind(fd, (struct sockaddr*)&sin, sizeof(sin))) {
+    return -1;
+  }
+
+#define _SRV_SET_REUSEPORT
+#ifdef _SRV_SET_REUSEPORT
+  {
+    int flag = 1;
+    if (-1 == setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &flag, sizeof(flag))) {
+      fprintf(stderr,
+          "Inet: Warning: Failed to set (server) socket option SO_REUSEPORT "
+          "(continuing), errno=%d.", errno);
+      abort();  /* FIXME temp */
+    }
+  }
+#endif
+
+  if (bind(fd, (struct sockaddr*)&sin, sizeof(sin))) {
     fprintf(stderr, "Could not bind socket.\n");
     close(fd);
     return -1;
@@ -31,5 +49,18 @@ int srv_serversocket_tcp
     close(fd);
     return -1;
   }
+
+#define _SRV_SET_TCPNODELAY
+#ifdef _SRV_SET_TCPNODELAY
+  {
+    int flag = 1;
+    if (-1 == setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag))) {
+      fprintf(stderr,
+          "Inet: Warning: Failed to set (server) socket option TCP_NODELAY "
+          "(continuing), errno=%d.", errno);
+    }
+  }
+#endif
+
   return fd;
 }
