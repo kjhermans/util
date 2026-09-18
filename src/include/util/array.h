@@ -56,11 +56,11 @@
 #endif
 
 /**
- * Define ARRAY_REDUCE to zero if you want to skip potentially expensive
+ * Define ARRAY_REDUCE to non-zero if you want to do potentially expensive
  * reallocs on reduction of the array.
  */
-#ifndef ARRAY_REDUCE
-#define ARRAY_REDUCE 1
+#if !defined ARRAY_REDUCE
+#define ARRAY_REDUCE 0
 #endif
 
 #ifndef ARRAY_FREE_ITEM
