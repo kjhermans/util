@@ -21,6 +21,7 @@ fnchdr: ../include/util/util_functions.h
 	  -x ./str2str_map.c \
 		-x ./vec_t.c \
 		-x ./vec_list.c \
+		-x ./hash.c \
 	    > ../include/util/util_functions.h
 
 $(TARGET): $(OBJECTS)
