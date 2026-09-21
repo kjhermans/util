@@ -76,6 +76,10 @@ void hash_init
   (hash_t* h);
 
 extern
+void hash_free
+  (hash_t* h);
+
+extern
 void hash_set_hasher
   (hash_t* h, uint64_t(*fnc)(hash_t* h,vec_t* key,void* arg), void* arg);
 

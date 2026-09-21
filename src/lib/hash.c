@@ -70,6 +70,51 @@ void hash_init
   h->replacepolicy = HASH_REPLACE_ERROR;
 }
 
+static
+void hash_free_bucket
+  (hash_t* h, hash_bucket_t* bucket)
+{
+  for (unsigned i=0; i < bucket->count; i++) {
+    vec_t* key = &(bucket->keys[ i ]);
+    vec_t* value = &(bucket->values[ i ]);
+    switch (h->ownership.policy) {
+    case HASH_OWNER_CALLER:
+      break;
+    case HASH_OWNER_LIBRARY:
+      free(key->data);
+      free(value->data);
+      break;
+    case HASH_OWNER_CALLBACK:
+      h->ownership.callback(h, key, value, h->ownership.arg);
+      break;
+    }
+  }
+}
+
+static
+void hash_free_map
+  (hash_t* h, hash_map_t* map, unsigned d)
+{
+  for (unsigned i=0; i < map->count; i++) {
+    hash_tuple_t* tuple = map->values[ i ];
+    if (d < h->depth) {
+      hash_free_map(h, &(tuple->map), d+1);
+    } else {
+      hash_free_bucket(h, &(tuple->bucket));
+    }
+    free(tuple);
+  }
+  free(map->keys);
+  free(map->values);
+}
+
+void hash_free
+  (hash_t* h)
+{
+  hash_map_t* map = &(h->map);
+  hash_free_map(h, map, 0);
+}
+
 void hash_set_hasher
   (hash_t* h, uint64_t(*fnc)(hash_t* h,vec_t* key, void* arg), void* arg)
 {
