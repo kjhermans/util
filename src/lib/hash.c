@@ -154,7 +154,7 @@ int hash_put
   hash_tuple_t* tuple = NULL;
   vec_t* found = NULL;
 
-  hash %= (1 << (h->depth * 4));
+  hash %= ((uint64_t)1 << (uint64_t)(h->depth * 4));
   for (unsigned i=0; i < h->depth; i++) {
     uint8_t nibble = (hash & 0x0f);
     hash >>= 4;
@@ -198,7 +198,7 @@ int hash_get
   uint64_t hash = h->hasher(h, key, h->arg);
   hash_tuple_t* tuple;
 
-  hash %= (1 << (h->depth * 4));
+  hash %= ((uint64_t)1 << (uint64_t)(h->depth * 4));
   for (unsigned i=0; i < h->depth; i++) {
     uint8_t nibble = (hash & 0x0f);
     hash >>= 4;
@@ -221,7 +221,7 @@ int hash_del
   uint64_t hash = h->hasher(h, key, h->arg);
   hash_tuple_t* tuple;
 
-  hash %= (1 << (h->depth * 4));
+  hash %= ((uint64_t)1 << (uint64_t)(h->depth * 4));
   for (unsigned i=0; i < h->depth; i++) {
     uint8_t nibble = (hash & 0x0f);
     hash >>= 4;
