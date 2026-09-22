@@ -99,7 +99,7 @@ void hash_free_map
 {
   for (unsigned i=0; i < map->count; i++) {
     hash_tuple_t* tuple = map->values[ i ];
-    if (d < h->depth) {
+    if (d+1 < h->depth) {
       hash_free_map(h, &(tuple->map), d+1);
     } else {
       hash_free_bucket(h, &(tuple->bucket));
