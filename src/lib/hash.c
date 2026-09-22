@@ -89,6 +89,8 @@ void hash_free_bucket
       break;
     }
   }
+  free(bucket->keys);
+  free(bucket->values);
 }
 
 static
