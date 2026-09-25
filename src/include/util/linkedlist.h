@@ -1,0 +1,222 @@
+#ifndef _LINKEDLIST_H_
+#define _LINKEDLIST_H_
+
+#include <stdlib.h>
+#include <string.h>
+
+#define COMBINE(a, b) a##b
+
+#ifndef ARRAY_EQUALS
+#define ARRAY_EQUALS(a,b) (a == b)
+#endif
+
+#define MAKE_LLIST_HEADER(T, prefix)                                \
+  typedef struct COMBINE(prefix, strct) COMBINE(prefix, t);         \
+  struct COMBINE(prefix, strct) {                                   \
+    T value;                                                        \
+    COMBINE(prefix, t)* prev;                                       \
+    COMBINE(prefix, t)* next;                                       \
+  };                                                                \
+                                                                    \
+  extern                                                            \
+  void COMBINE(prefix, init)(COMBINE(prefix, t)* list);             \
+                                                                    \
+  extern                                                            \
+  COMBINE(prefix, t) COMBINE(prefix, INIT)(void);                   \
+                                                                    \
+  extern                                                            \
+  T* COMBINE(prefix, push)(COMBINE(prefix, t)* list, T elt);        \
+                                                                    \
+  extern                                                            \
+  unsigned COMBINE(prefix, size)(COMBINE(prefix, t)* list);         \
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, peek)(COMBINE(prefix, t)* list, T* elt);      \
+                                                                    \
+  extern                                                            \
+  T* COMBINE(prefix, peekptr)(COMBINE(prefix, t)* list);            \
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, pop)(COMBINE(prefix, t)* list, T* elt);       \
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, get)(COMBINE(prefix, t)* list, unsigned index, T* elt);\
+                                                                    \
+  extern                                                            \
+  T* COMBINE(prefix, getptr)(COMBINE(prefix, t)* list, unsigned index);\
+                                                                    \
+  extern                                                            \
+  T* COMBINE(prefix, has)(COMBINE(prefix, t)* list, T elt);         \
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, indexof)(COMBINE(prefix, t)* list, T elt);    \
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, lastindexof)(COMBINE(prefix, t)* list, T elt);\
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, set)(COMBINE(prefix, t)* list, unsigned index, T elt);\
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, rem)(COMBINE(prefix, t)* list, unsigned index, T* elt);\
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, ins)(COMBINE(prefix, t)* list, unsigned index, T elt);\
+                                                                    \
+  extern                                                            \
+  void COMBINE(prefix, free)(COMBINE(prefix, t)* list);             \
+                                                                    \
+  extern                                                            \
+  void COMBINE(prefix, clear)(COMBINE(prefix, t)* list);            \
+                                                                    \
+  extern                                                            \
+  void COMBINE(prefix, print)(COMBINE(prefix, t)* list);            \
+                                                                    \
+  extern                                                            \
+  void COMBINE(prefix, copy)(COMBINE(prefix, t)* src,               \
+                             COMBINE(prefix, t)* dst);              \
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, iterate)(COMBINE(prefix, t)* list,            \
+    int(*fnc)(COMBINE(prefix, t)*,unsigned,T*,void*), void*);       \
+                                                                    \
+  extern                                                            \
+  int COMBINE(prefix, reverse)(COMBINE(prefix, t)* list,            \
+    int(*fnc)(COMBINE(prefix, t)*,unsigned,T*,void*), void*);       \
+
+
+#define MAKE_LLIST_CODE(T, prefix)                                  \
+  void COMBINE(prefix, init)(COMBINE(prefix, t)* list) {            \
+    memset(list, 0, sizeof(*list));                                 \
+  }                                                                 \
+                                                                    \
+  COMBINE(prefix, t) COMBINE(prefix, INIT)(void) {                  \
+    COMBINE(prefix, t) result = { 0 };                              \
+    return result;                                                  \
+  }                                                                 \
+                                                                    \
+  COMBINE(prefix, t)* COMBINE(prefix, iter)                         \
+    (COMBINE(prefix, t)* list, unsigned index)                      \
+  {                                                                 \
+    COMBINE(prefix, t)* stepper = list;                             \
+    for (unsigned i=0; i < index; i++) {                            \
+      if (stepper == list) { return NULL; }                         \
+      stepper = stepper->next;                                      \
+    }                                                               \
+    return stepper;                                                 \
+  }                                                                 \
+                                                                    \
+  T* COMBINE(prefix, push)                                          \
+    (COMBINE(prefix, t)* list, T elt)                               \
+  {                                                                 \
+    if (list->next == NULL) {                                       \
+      list->next = list;                                            \
+      list->prev = list;                                            \
+      list->value = elt;                                            \
+      return &(list->value);                                        \
+    } else {                                                        \
+      COMBINE(prefix, t)* node = calloc(sizeof(COMBINE(prefix, t)), 1); \
+      COMBINE(prefix, t)* last = list->prev;                        \
+      node->next = list;                                            \
+      node->prev = last;                                            \
+      node->value = elt;                                            \
+      last->next = node;                                            \
+      list->prev = node;                                            \
+      return &(node->value);                                        \
+    }                                                               \
+  }                                                                 \
+                                                                    \
+  int COMBINE(prefix, get)                                          \
+    (COMBINE(prefix, t)* list, unsigned index, T* elt)              \
+  {                                                                 \
+    COMBINE(prefix, t)* node = COMBINE(prefix, iter)(list, index);  \
+    if (NULL == node) { return ~0; }                                \
+    if (elt) { *elt = node->value; }                                \
+    return 0;                                                       \
+  }                                                                 \
+                                                                    \
+  T* COMBINE(prefix, getptr)                                        \
+    (COMBINE(prefix, t)* list, unsigned index)                      \
+  {                                                                 \
+    COMBINE(prefix, t)* node = COMBINE(prefix, iter)(list, index);  \
+    if (NULL == node) { return NULL; }                              \
+    return &(node->value);                                          \
+  }                                                                 \
+                                                                    \
+  int COMBINE(prefix, peek)                                         \
+    (COMBINE(prefix, t)* list, T* elt)                              \
+  {                                                                 \
+    if (list->prev) { if (elt) { *elt = list->prev->value; } return 0; } \
+    return ~0;                                                      \
+  }                                                                 \
+                                                                    \
+  T* COMBINE(prefix, peekptr)                                       \
+    (COMBINE(prefix, t)* list)                                      \
+  {                                                                 \
+    if (list->prev) { return &(list->prev->value); }                \
+    return NULL;                                                    \
+  }                                                                 \
+                                                                    \
+  int COMBINE(prefix, pop)                                          \
+    (COMBINE(prefix, t)* list, T* elt)                              \
+  {                                                                 \
+    if (NULL == list->prev) { return ~0; }                          \
+    if (list->prev == list) {                                       \
+      if (elt) { *elt = list->value; }                              \
+      list->prev = NULL;                                            \
+      list->next = NULL;                                            \
+      return 0;                                                     \
+    } else {                                                        \
+      COMBINE(prefix, t)* last = list->prev;                        \
+      COMBINE(prefix, t)* lastprev = last->prev;                    \
+      if (elt) { *elt = last->value; }                              \
+      lastprev->next = last->next;                                  \
+      list->prev = lastprev;                                        \
+      free(last);                                                   \
+      return 0;                                                     \
+    }                                                               \
+  }                                                                 \
+                                                                    \
+  int COMBINE(prefix, rem)                                          \
+    (COMBINE(prefix, t)* list, unsigned index, T* elt)              \
+  {                                                                 \
+    COMBINE(prefix, t)* node = COMBINE(prefix, iter)(list, index);  \
+    if (NULL == node) { return ~0; }                                \
+    if (elt) { *elt = node->value; }                                \
+    if (node->next == node->prev && node->prev == list) {           \
+      free(node);                                                   \
+      list->next = NULL;                                            \
+      list->prev = NULL;                                            \
+      return 0;                                                     \
+    } else {                                                        \
+      COMBINE(prefix, t)* prev = node->prev;                        \
+      COMBINE(prefix, t)* next = node->next;                        \
+      free(node);                                                   \
+      prev->next = next;                                            \
+      next->prev = prev;                                            \
+      return 0;                                                     \
+    }                                                               \
+  }                                                                 \
+                                                                    \
+  int COMBINE(prefix, ins)                                          \
+    (COMBINE(prefix, t)* list, unsigned index, T elt)               \
+  {                                                                 \
+    COMBINE(prefix, t)* node = COMBINE(prefix, iter)(list, index);  \
+    if (NULL == node) { return ~0; }                                \
+    COMBINE(prefix, t)* nodenext = node->next;                      \
+    COMBINE(prefix, t)* nodenew = calloc(sizeof(COMBINE(prefix, t)), 1); \
+    nodenew->next = nodenext;                                       \
+    nodenew->prev = node;                                           \
+    nodenew->value = elt;                                           \
+    node->next = nodenew;                                           \
+    nodenext->prev = nodenew;                                       \
+    return 0;                                                       \
+  }                                                                 \
+                                                                    \
+
+#define LLIST_ITERATE_BEGIN(list) { \
+  unsigned i=0; COMBINE(prefix, t)* node = &list; while (node) {
+
+#define LLIST_ITERATE_END } ++i; node = node->next; }
+
+#endif
