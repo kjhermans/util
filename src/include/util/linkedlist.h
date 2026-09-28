@@ -97,6 +97,16 @@
     return result;                                                  \
   }                                                                 \
                                                                     \
+  unsigned COMBINE(prefix, size)(COMBINE(prefix, t)* list) {        \
+    unsigned i=0;                                                   \
+    COMBINE(prefix, t)* stepper = list;                             \
+    if (NULL == stepper->next) { return 0; }                        \
+    while ((NULL != (stepper = stepper->next)) && stepper != list) {\
+      ++i;                                                          \
+    }                                                               \
+    return i+1;                                                     \
+  }                                                                 \
+                                                                    \
   COMBINE(prefix, t)* COMBINE(prefix, iter)                         \
     (COMBINE(prefix, t)* list, unsigned index)                      \
   {                                                                 \

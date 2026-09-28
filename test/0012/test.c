@@ -36,5 +36,26 @@ int main
 
   int r = ulist_iterate(&l, iterator, argv[0]);
 
+  unsigned s = ulist_size(&l);
+  fprintf(stderr, "Size of list = %u\n", s);
+
+  ulist_t l1 = { 0 };
+  fprintf(stderr, "Size of empty list = %u\n", ulist_size(&l1));
+
+  ulist_push(&l1, 1);
+  fprintf(stderr, "Size of list with one elt = %u\n", ulist_size(&l1));
+
+  ulist_push(&l1, 1000);
+  fprintf(stderr, "Size of list with two elts = %u\n", ulist_size(&l1));
+
+  ulist_pop(&l1, NULL);
+  fprintf(stderr, "Size of list with one elt = %u\n", ulist_size(&l1));
+
+  ulist_pop(&l1, NULL);
+  fprintf(stderr, "Size of empty list = %u\n", ulist_size(&l1));
+
+  r = ulist_pop(&l1, NULL);
+  fprintf(stderr, "Return code of last pop is %d\n", r);
+
   return 0;
 }
