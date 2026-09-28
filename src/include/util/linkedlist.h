@@ -10,6 +10,8 @@
 #define ARRAY_EQUALS(a,b) (a == b)
 #endif
 
+#define LLIST_BREAK (1<<16) /* Don't define this as an error code */
+
 #define MAKE_LLIST_HEADER(T, prefix)                                \
   typedef struct COMBINE(prefix, strct) COMBINE(prefix, t);         \
   struct COMBINE(prefix, strct) {                                   \
@@ -83,7 +85,7 @@
   extern                                                            \
   int COMBINE(prefix, reverse)(COMBINE(prefix, t)* list,            \
     int(*fnc)(COMBINE(prefix, t)*,unsigned,T*,void*), void*);       \
-
+                                                                    \
 
 #define MAKE_LLIST_CODE(T, prefix)                                  \
   void COMBINE(prefix, init)(COMBINE(prefix, t)* list) {            \
@@ -213,10 +215,26 @@
     return 0;                                                       \
   }                                                                 \
                                                                     \
-
-#define LLIST_ITERATE_BEGIN(list) { \
-  unsigned i=0; COMBINE(prefix, t)* node = &list; while (node) {
-
-#define LLIST_ITERATE_END } ++i; node = node->next; }
+  int COMBINE(prefix, iterate)(COMBINE(prefix, t)* list,            \
+    int(*fnc)(COMBINE(prefix, t)*,unsigned,T*,void*), void* arg)    \
+  {                                                                 \
+    COMBINE(prefix, t)* node = list;                                \
+    unsigned i = 0;                                                 \
+    if (node->next) {                                               \
+      do {                                                          \
+        int r;                                                      \
+        switch (r = fnc(list, i, &(node->value), arg)) {            \
+        case 0:                                                     \
+          break;                                                    \
+        case LLIST_BREAK:                                           \
+          return 0;                                                 \
+        default:                                                    \
+          return r;                                                 \
+        }                                                           \
+        ++i;                                                        \
+      } while ((node = node->next) != list);                        \
+    }                                                               \
+  }                                                                 \
+                                                                    \
 
 #endif
