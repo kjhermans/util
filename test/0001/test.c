@@ -12,11 +12,15 @@ int main
     vec_t vec = { 0 };
     vec_appendstr(&vec, "123");
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
-    vec_base64_encode(&vec);
+    vec_base64_encode(&vec, 0);
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
     vec_base64_decode(&vec);
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
     if (strcmp(vec.data, "123")) {
+      fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
+      return ~0;
+    }
+    if (vec.size != strlen(vec.data)) {
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }
@@ -27,11 +31,15 @@ int main
     vec_t vec = { 0 };
     vec_appendstr(&vec, "1234");
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
-    vec_base64_encode(&vec);
+    vec_base64_encode(&vec, 0);
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
     vec_base64_decode(&vec);
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
     if (strcmp(vec.data, "1234")) {
+      fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
+      return ~0;
+    }
+    if (vec.size != strlen(vec.data)) {
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }
@@ -42,11 +50,15 @@ int main
     vec_t vec = { 0 };
     vec_appendstr(&vec, "12345");
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
-    vec_base64_encode(&vec);
+    vec_base64_encode(&vec, 0);
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
     vec_base64_decode(&vec);
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
     if (strcmp(vec.data, "12345")) {
+      fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
+      return ~0;
+    }
+    if (vec.size != strlen(vec.data)) {
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }
@@ -63,6 +75,10 @@ int main
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }
+    if (vec.size != strlen(vec.data)) {
+      fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
+      return ~0;
+    }
   }
   fprintf(stderr, "Subtest Ok.\n");
 
@@ -73,6 +89,10 @@ int main
     vec_base64_decode(&vec);
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
     if (strcmp(vec.data, "1234")) {
+      fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
+      return ~0;
+    }
+    if (vec.size != strlen(vec.data)) {
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }
@@ -97,6 +117,10 @@ int main
     vec_appendstr(&vec, "MTIzNDU===");
     fprintf(stderr, "VEC: %s (%u)\n", vec.data, vec.size);
     if (vec_base64_decode(&vec) == 0) {
+      fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
+      return ~0;
+    }
+    if (vec.size != strlen(vec.data)) {
       fprintf(stderr, "FAILURE (%s:%d).\n", __FILE__, __LINE__);
       return ~0;
     }
