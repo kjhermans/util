@@ -174,9 +174,21 @@ char* nextarg
   (unsigned argc, char* argv[], char* arg)
   __attribute__ ((warn_unused_result));
 
+/* declared in ./srv_clientsocket_tcp.c */
+extern
+int srv_clientsocket_tcp
+  (uint32_t ip, uint16_t port)
+  __attribute__ ((warn_unused_result));
+
 /* declared in ./srv_clientsocket_udp.c */
 extern
 int srv_clientsocket_udp
+  (uint32_t ip, uint16_t port)
+  __attribute__ ((warn_unused_result));
+
+/* declared in ./srv_serversocket_tcp.c */
+extern
+int srv_serversocket_tcp
   (uint32_t ip, uint16_t port)
   __attribute__ ((warn_unused_result));
 
