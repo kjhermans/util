@@ -192,6 +192,14 @@ vec_t vec_copy_
   return out;
 }
 
+vec_t vec_string
+  (char* str)
+{
+  vec_t result = { 0 };
+  vec_appendstr(&result, str);
+  return result;
+}
+
 void vec_shift
   (vec_t* out, unsigned offset, unsigned whereto, int size)
 {
