@@ -19,14 +19,30 @@ for (my $i=0; $i < 2048; $i++) {
   while ($vl--) {
     $val .= ('a'..'z')[ rand(26) ];
   }
-  $hash->{$key} = $val;
-  print "
+  if (defined($hash->{$key})) {
+    print "
   {
-    vec_t key = vec_string(\"$key\"); 
-    vec_t val = vec_string(\"$val\"); 
-    if (hash_put(&h, &key, &val)) { fprintf(stderr, \"Put error.\\n\"); exit(-1); }
+    vec_t key = vec_string(\"$key\");
+    vec_t val = vec_string(\"$val\");
+    if (hash_put(&h, &key, &val) != HASH_ERR_REPLACE) {
+      fprintf(stderr, \"Expected replacement error $key -> $val.\\n\");
+      exit(-1);
+    }
+    fprintf(stderr, \"Duplicate $key -> $val ok.\\n\");
+  }";
+  } else {
+    $hash->{$key} = $val;
+    print "
+  {
+    vec_t key = vec_string(\"$key\");
+    vec_t val = vec_string(\"$val\");
+    if (hash_put(&h, &key, &val)) {
+      fprintf(stderr, \"Put error $key -> $val.\\n\");
+      exit(-1);
+    }
     fprintf(stderr, \"$key -> $val\\n\");
   }";
+  }
 }
 
 print "}
