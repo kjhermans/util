@@ -246,5 +246,15 @@
     }                                                               \
   }                                                                 \
                                                                     \
+  void COMBINE(prefix, free)(COMBINE(prefix, t)* list)              \
+  {                                                                 \
+    COMBINE(prefix, t)* next = list->next;                          \
+    while (next && next != list) {                                  \
+      COMBINE(prefix, t)* prev = next;                              \
+      next = next->next;                                            \
+      free(prev);                                                   \
+    }                                                               \
+  }                                                                 \
+                                                                    \
 
 #endif

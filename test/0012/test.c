@@ -57,5 +57,7 @@ int main
   r = ulist_pop(&l1, NULL);
   fprintf(stderr, "Return code of last pop is %d\n", r);
 
+  ulist_free(&l);
+
   return 0;
 }
