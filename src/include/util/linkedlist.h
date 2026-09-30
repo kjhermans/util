@@ -270,9 +270,10 @@
   {                                                                 \
     COMBINE(prefix, t)* node = list;                                \
     unsigned i = 0;                                                 \
-    if (node->next) {                                               \
-      do {                                                          \
+    if (node->prev) {                                               \
+      while (1) {                                                   \
         int r;                                                      \
+        node = node->prev;                                          \
         switch (r = fnc(list, i, &(node->value), arg)) {            \
         case 0:                                                     \
           break;                                                    \
@@ -282,7 +283,8 @@
           return r;                                                 \
         }                                                           \
         ++i;                                                        \
-      } while ((node = node->prev) != list);                        \
+        if (node == list) { break; }                                \
+      }                                                             \
     }                                                               \
     return 0;                                                       \
   }                                                                 \
