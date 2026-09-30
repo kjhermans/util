@@ -6,8 +6,8 @@
 
 #define COMBINE(a, b) a##b
 
-#ifndef ARRAY_EQUALS
-#define ARRAY_EQUALS(a,b) (a == b)
+#ifndef LLIST_EQUALS
+#define LLIST_EQUALS(a,b) (a == b)
 #endif
 
 #define LLIST_BREAK (1<<16) /* Don't define this as an error code */
@@ -67,9 +67,6 @@
                                                                     \
   extern                                                            \
   void COMBINE(prefix, free)(COMBINE(prefix, t)* list);             \
-                                                                    \
-  extern                                                            \
-  void COMBINE(prefix, clear)(COMBINE(prefix, t)* list);            \
                                                                     \
   extern                                                            \
   void COMBINE(prefix, print)(COMBINE(prefix, t)* list);            \
@@ -136,6 +133,20 @@
       list->prev = node;                                            \
       return &(node->value);                                        \
     }                                                               \
+  }                                                                 \
+                                                                    \
+  T* COMBINE(prefix, has)(COMBINE(prefix, t)* list, T elt) {        \
+    COMBINE(prefix, t)* node = list;                                \
+    unsigned i = 0;                                                 \
+    if (node->next) {                                               \
+      do {                                                          \
+        if (LLIST_EQUALS(node->value, elt)) {                       \
+          return &(node->value);                                    \
+        }                                                           \
+        ++i;                                                        \
+      } while ((node = node->next) != list);                        \
+    }                                                               \
+    return NULL;                                                    \
   }                                                                 \
                                                                     \
   int COMBINE(prefix, get)                                          \
@@ -210,6 +221,13 @@
     }                                                               \
   }                                                                 \
                                                                     \
+  int COMBINE(prefix, set)(COMBINE(prefix, t)* list, unsigned index, T elt) { \
+    COMBINE(prefix, t)* node = COMBINE(prefix, iter)(list, index);  \
+    if (NULL == node) { return ~0; }                                \
+    node->value = elt;                                              \
+    return 0;                                                       \
+  }                                                                 \
+                                                                    \
   int COMBINE(prefix, ins)                                          \
     (COMBINE(prefix, t)* list, unsigned index, T elt)               \
   {                                                                 \
@@ -244,6 +262,43 @@
         ++i;                                                        \
       } while ((node = node->next) != list);                        \
     }                                                               \
+    return 0;                                                       \
+  }                                                                 \
+                                                                    \
+  int COMBINE(prefix, reverse)(COMBINE(prefix, t)* list,            \
+    int(*fnc)(COMBINE(prefix, t)*,unsigned,T*,void*), void* arg)    \
+  {                                                                 \
+    COMBINE(prefix, t)* node = list;                                \
+    unsigned i = 0;                                                 \
+    if (node->next) {                                               \
+      do {                                                          \
+        int r;                                                      \
+        switch (r = fnc(list, i, &(node->value), arg)) {            \
+        case 0:                                                     \
+          break;                                                    \
+        case LLIST_BREAK:                                           \
+          return 0;                                                 \
+        default:                                                    \
+          return r;                                                 \
+        }                                                           \
+        ++i;                                                        \
+      } while ((node = node->prev) != list);                        \
+    }                                                               \
+    return 0;                                                       \
+  }                                                                 \
+                                                                    \
+  int COMBINE(prefix, indexof)(COMBINE(prefix, t)* list, T elt) {   \
+    COMBINE(prefix, t)* node = list;                                \
+    unsigned i = 0;                                                 \
+    if (node->next) {                                               \
+      do {                                                          \
+        if (LLIST_EQUALS(node->value, elt)) {                       \
+          return (int)i;                                            \
+        }                                                           \
+        ++i;                                                        \
+      } while ((node = node->next) != list);                        \
+    }                                                               \
+    return -1;                                                      \
   }                                                                 \
                                                                     \
   void COMBINE(prefix, free)(COMBINE(prefix, t)* list)              \
@@ -254,6 +309,8 @@
       next = next->next;                                            \
       free(prev);                                                   \
     }                                                               \
+    list->next = NULL;                                              \
+    list->prev = NULL;                                              \
   }                                                                 \
                                                                     \
 

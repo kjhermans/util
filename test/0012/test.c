@@ -15,6 +15,7 @@ int iterator
 int main
   (int argc, char* argv[])
 {
+  int r;
   ulist_t l = { 0 };
 
   ulist_push(&l, 2);
@@ -34,7 +35,8 @@ int main
     } while ((node = node->next) != &l);
   }
 
-  int r = ulist_iterate(&l, iterator, argv[0]);
+  r = ulist_iterate(&l, iterator, "forward"); if (r) { exit(-1); }
+  r = ulist_reverse(&l, iterator, "backward"); if (r) { exit(-1); }
 
   unsigned s = ulist_size(&l);
   fprintf(stderr, "Size of list = %u\n", s);
